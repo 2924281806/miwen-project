@@ -1,0 +1,23 @@
+# Web 框架
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# ORM 与数据库
+sqlalchemy==2.0.36
+alembic==1.14.0
+PyMySQL==1.1.1
+
+# 配置与校验
+pydantic-settings==2.7.0
+email-validator==2.2.0
+python-multipart==0.0.20
+
+# 鉴权与密码
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+
+# mysqlclient：MySQL 官方 C 驱动，需本地编译环境（Windows 上安装较麻烦）
+# 本项目 DATABASE_URL 默认使用 PyMySQL 驱动（mysql+pymysql），
+# 若需切换到 mysqlclient，请取消下面注释安装，并把 .env 中的驱动改为 mysql+mysqldb
+# mysqlclient==2.2.7
