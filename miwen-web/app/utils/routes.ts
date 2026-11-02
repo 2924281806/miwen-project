@@ -18,5 +18,17 @@ const menuItems: MenuItem[] = [
     key: "/home",
     label: "home页",
   },
+  {
+    key: "/hot",
+    label: "热榜",
+  },
+  {
+    key: "/recommend",
+    label: "推荐",
+  },
+  {
+    key: "/group",
+    label: "圈子",
+  },
 ];
 export default menuItems;

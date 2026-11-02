@@ -5,6 +5,7 @@
 """
 
 import logging
+import secrets
 
 from fastapi import APIRouter, Depends, Path
 from sqlalchemy.orm import Session
@@ -12,7 +13,7 @@ from sqlalchemy.orm import Session
 from app.crud import crud_user
 from app.database import get_db
 from app.dependencies import get_current_user, get_user_by_refresh_token
-from app.exceptions import BadRequestException, ForbiddenException, NotFoundException
+from app.exceptions import AppException, BadRequestException, ForbiddenException, NotFoundException
 from app.models.user import User
 from app.schemas.common import ApiResponse
 from app.schemas.user import (
@@ -38,12 +39,21 @@ auth_router = APIRouter(prefix="/auth", tags=["认证"])
 user_router = APIRouter(prefix="/user", tags=["用户"])
 
 
+def _generate_uid(db: Session) -> str:
+    """生成对外暴露的用户唯一标识（32 位十六进制），极小概率重复时重试。"""
+    for _ in range(5):
+        uid = secrets.token_hex(16)
+        if crud_user.get_user_by_uid(db, uid, include_deleted=True) is None:
+            return uid
+    raise AppException("用户标识生成失败，请稍后重试", code=500)
+
+
 # ==================== 认证相关（游客可访问）====================
 @auth_router.post(
     "/register",
     response_model=ApiResponse[UserOut],
     summary="用户注册",
-    description="用户名、邮箱唯一校验，密码以 bcrypt 哈希入库，返回用户公开信息（不含 password_hash）。",
+    description="用户名、邮箱唯一校验，密码以 bcrypt 哈希入库，自动生成用户唯一标识 uid，返回用户公开信息（不含 password_hash）。",
 )
 def register(payload: UserRegister, db: Session = Depends(get_db)) -> ApiResponse[UserOut]:
     """注册新用户。"""
@@ -54,12 +64,13 @@ def register(payload: UserRegister, db: Session = Depends(get_db)) -> ApiRespons
 
     user = crud_user.create_user(
         db,
+        uid=_generate_uid(db),
         username=payload.username,
         email=payload.email,
         password_hash=get_password_hash(payload.password),
         nickname=payload.username,
     )
-    logger.info("用户注册成功 | user_id=%s username=%s", user.id, user.username)
+    logger.info("用户注册成功 | user_id=%s uid=%s username=%s", user.id, user.uid, user.username)
     return ApiResponse.ok(UserOut.model_validate(user), msg="注册成功")
 
 
@@ -151,6 +162,24 @@ def update_me(
     user = crud_user.update_user(db, current_user, update_data)
     logger.info("用户修改资料 | user_id=%s fields=%s", user.id, list(update_data.keys()))
     return ApiResponse.ok(UserOut.model_validate(user), msg="资料更新成功")
+
+
+@user_router.get(
+    "/uid/{uid}",
+    response_model=ApiResponse[UserPublicOut],
+    summary="按 uid 查询用户",
+    description="通过用户唯一标识 uid 查询对应用户的公开信息（不含邮箱、状态等隐私字段）。",
+)
+def read_user_by_uid(
+    uid: str = Path(..., min_length=1, max_length=32, description="用户唯一标识 uid"),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> ApiResponse[UserPublicOut]:
+    """按 uid 查询用户。"""
+    user = crud_user.get_user_by_uid(db, uid)
+    if user is None:
+        raise NotFoundException("用户不存在")
+    return ApiResponse.ok(UserPublicOut.model_validate(user))
 
 
 @user_router.get(

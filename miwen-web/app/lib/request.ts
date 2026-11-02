@@ -1,7 +1,14 @@
+import type { AxiosRequestConfig, AxiosResponse } from "axios";
 import axios from "axios";
-
+import { useState } from "react";
+// 后端统一返回结构
+interface ApiResult<T = unknown> {
+  code: number;
+  message: string;
+  data: T;
+}
 const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
+// const [token, setToken] = useState("");
 // 缓存token + 锁（防止并发多次请求token）
 let token: string = "";
 let isFetchingToken = false;
@@ -9,20 +16,12 @@ let tokenQueue: ((t: string) => void)[] = [];
 
 // 获取token的请求函数
 const fetchToken = async (): Promise<string> => {
-  console.log("fetchToken");
   const res = await axios.post(`${baseUrl}/api/auth/login`, {
-    username: "string",
-    email: "user@example.com",
-    password: "string",
+    email: "tom@example.com",
+    password: "123456",
   });
   return res.data?.data?.access_token || "";
 };
-
-// axios实例
-const requestInstance = axios.create({
-  baseURL: baseUrl,
-  timeout: 10000,
-});
 
 // 获取token（带排队锁）
 const getToken = async (): Promise<string> => {
@@ -38,11 +37,11 @@ const getToken = async (): Promise<string> => {
     fetchToken()
       .then((newToken) => {
         token = newToken;
-        tokenQueue.forEach((resolve) => resolve(newToken));
+        tokenQueue.forEach((resolveFn) => resolveFn(newToken));
         tokenQueue = [];
       })
       .catch(() => {
-        tokenQueue.forEach((resolve) => resolve(""));
+        tokenQueue.forEach((resolveFn) => resolveFn(""));
         tokenQueue = [];
       })
       .finally(() => {
@@ -51,22 +50,11 @@ const getToken = async (): Promise<string> => {
   });
 };
 
-// 核心底层方法，自动带上token
-const baseRequest = async (config: any) => {
-  const tk = await getToken();
-  if (!tk) {
-    throw new Error("token获取失败");
-  }
-  const axiosConfig: any = {
-    ...config,
-    headers: {
-      Authorization: `Bearer ${tk}`,
-      ...config.headers,
-    },
-  };
-  console.log("axiosConfig", axiosConfig);
-  return requestInstance(axiosConfig);
-};
+// axios实例
+const requestInstance = axios.create({
+  baseURL: baseUrl,
+  timeout: 10000,
+});
 
 // 请求拦截器
 requestInstance.interceptors.request.use(
@@ -76,11 +64,10 @@ requestInstance.interceptors.request.use(
   (err) => Promise.reject(err),
 );
 
-// 响应拦截器
+// ✅ 【重点修复】响应拦截器不再return response.data，原样返回response，消除TS报错
 requestInstance.interceptors.response.use(
-  (res) => {
-    // 这里根据你的后端返回结构调整
-    return res.data;
+  (response: AxiosResponse<ApiResult>) => {
+    return response;
   },
   (err) => {
     // 错误处理
@@ -90,50 +77,85 @@ requestInstance.interceptors.response.use(
     // 401 未登录跳转（仅客户端）
     if (err.response?.status === 401 && typeof window !== "undefined") {
       clearToken();
-      // 跳转登录
-      //   location.href = "/login";
+      // location.href = "/login";
     }
     return Promise.reject(err);
   },
 );
+
 // 清除token
 export const clearToken = () => {
   token = "";
 };
 
+// ✅ 底层baseRequest：增加泛型，内部剥壳 res.data，对外返回 ApiResult<T>
+const baseRequest = async <T>(
+  config: AxiosRequestConfig,
+): Promise<ApiResult<T>> => {
+  const tk = await getToken();
+  if (!tk) {
+    throw new Error("token获取失败");
+  }
+  const axiosConfig: AxiosRequestConfig = {
+    ...config,
+    headers: {
+      Authorization: `Bearer ${tk}`,
+      ...config.headers,
+    },
+  };
+  const res = await requestInstance<ApiResult<T>>(axiosConfig);
+  return res.data;
+};
+
 /**
- *导出 request 对象，支持 request.get / request.post
- *第一个参数: 请求地址
- *第二个参数: 请求参数
- *第三个参数: 额外axios配置（headers等）
+ * 导出 request 对象，支持 request.get / request.post
+ * 第一个参数: 请求地址
+ * 第二个参数: 请求参数
+ * 第三个参数: 额外axios配置（headers等）
  */
 export const request = {
-  get: async (url: string, params?: any, config?: any) => {
-    return baseRequest({
+  get: async <T = unknown, D = unknown>(
+    url: string,
+    params?: D,
+    config?: AxiosRequestConfig,
+  ) => {
+    return baseRequest<T>({
       url,
       method: "get",
       params,
       ...config,
     });
   },
-  post: async (url: string, data?: any, config?: any) => {
-    return baseRequest({
+  post: async <T = unknown, D = unknown>(
+    url: string,
+    data?: D,
+    config?: AxiosRequestConfig,
+  ) => {
+    return baseRequest<T>({
       url,
       method: "post",
       data,
       ...config,
     });
   },
-  put: async (url: string, data?: any, config?: any) => {
-    return baseRequest({
+  put: async <T = unknown, D = unknown>(
+    url: string,
+    data?: D,
+    config?: AxiosRequestConfig,
+  ) => {
+    return baseRequest<T>({
       url,
       method: "put",
       data,
       ...config,
     });
   },
-  delete: async (url: string, data?: any, config?: any) => {
-    return baseRequest({
+  delete: async <T = unknown, D = unknown>(
+    url: string,
+    data?: D,
+    config?: AxiosRequestConfig,
+  ) => {
+    return baseRequest<T>({
       url,
       method: "delete",
       data,

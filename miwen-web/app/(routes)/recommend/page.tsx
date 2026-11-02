@@ -1,6 +1,6 @@
 export default function Recommend() {
   return (
-    <div>
+    <div className="container">
       <h1>Recommend</h1>
     </div>
   );

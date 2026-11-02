@@ -1,0 +1,13 @@
+.search-icon {
+  color: #1677ff;
+}
+
+.input-search {
+  &:global(.ant-input) {
+    width: 320px;
+    padding: 8px 12px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #d9d9d9;
+  }
+}

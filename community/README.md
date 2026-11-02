@@ -130,10 +130,13 @@ python main.py
 | POST | `/api/auth/refresh-token` | 否       | 用 refresh_token 换新 access_token                 |
 | GET  | `/api/user/me`            | 是       | 获取自己的信息                                     |
 | PUT  | `/api/user/me`            | 是       | 修改自己的 avatar / bio（不可改 username、email）  |
+| GET  | `/api/user/uid/{uid}`     | 是       | 按用户唯一标识 uid 查询用户公开信息                |
 | GET  | `/api/user/{user_id}`     | 是       | 查看他人主页公开信息                               |
 | GET  | `/health`                 | 否       | 健康检查                                           |
 
 鉴权方式：请求头 `Authorization: Bearer <access_token>`。
+
+> `uid` 是注册时自动生成的 32 位十六进制用户唯一标识（唯一索引 `uk_uid`），对外用它区分用户，避免暴露自增主键 `id`。
 
 ## 七、curl 测试示例
 
@@ -153,6 +156,7 @@ curl -X POST "http://127.0.0.1:8000/api/auth/register" \
   "msg": "注册成功",
   "data": {
     "id": 1,
+    "uid": "9f2c7a1b3d4e5f60718293a4b5c6d7e8",
     "username": "tom",
     "email": "tom@example.com",
     "nickname": "tom",
@@ -251,6 +255,31 @@ curl -X GET "http://127.0.0.1:8000/api/user/2" \
 
 ```json
 { "code": 404, "msg": "用户不存在", "data": null }
+```
+
+### 7. 按 uid 查询用户
+
+```bash
+curl -X GET "http://127.0.0.1:8000/api/user/uid/9f2c7a1b3d4e5f60718293a4b5c6d7e8" \
+  -H "Authorization: Bearer <access_token>"
+```
+
+```json
+{
+  "code": 200,
+  "msg": "success",
+  "data": {
+    "id": 1,
+    "uid": "9f2c7a1b3d4e5f60718293a4b5c6d7e8",
+    "username": "tom",
+    "nickname": "tom",
+    "avatar": null,
+    "signature": null,
+    "level": 0,
+    "points": 0,
+    "created_at": "2025-01-01T12:00:00"
+  }
+}
 ```
 
 ## 八、分层约定

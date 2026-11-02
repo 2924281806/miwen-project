@@ -95,6 +95,7 @@ class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    uid: str
     username: str
     email: Optional[EmailStr] = None
     nickname: Optional[str] = None
@@ -114,6 +115,7 @@ class UserPublicOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    uid: str
     username: str
     nickname: Optional[str] = None
     avatar: Optional[str] = None

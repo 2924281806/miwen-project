@@ -21,6 +21,14 @@ def get_user_by_id(db: Session, user_id: int, include_deleted: bool = False) -> 
     return db.execute(stmt).scalar_one_or_none()
 
 
+def get_user_by_uid(db: Session, uid: str, include_deleted: bool = False) -> Optional[User]:
+    """按用户唯一标识 uid 查询用户。"""
+    stmt = select(User).where(User.uid == uid)
+    if not include_deleted:
+        stmt = stmt.where(User.deleted_at.is_(None))
+    return db.execute(stmt).scalar_one_or_none()
+
+
 def get_user_by_username(db: Session, username: str, include_deleted: bool = False) -> Optional[User]:
     """按用户名查询用户。"""
     stmt = select(User).where(User.username == username)
@@ -48,6 +56,7 @@ def get_user_by_account(db: Session, account: str, include_deleted: bool = False
 def create_user(
     db: Session,
     *,
+    uid: str,
     username: str,
     email: Optional[str],
     password_hash: str,
@@ -58,6 +67,7 @@ def create_user(
 ) -> User:
     """新增用户并返回持久化后的实例。"""
     user = User(
+        uid=uid,
         username=username,
         email=email,
         password_hash=password_hash,

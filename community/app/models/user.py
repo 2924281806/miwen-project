@@ -6,7 +6,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, Integer, String, func, text
+from sqlalchemy import DateTime, Index, Integer, String, func, text
 from sqlalchemy.dialects.mysql import BIGINT, TINYINT
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,16 +17,20 @@ class User(Base):
     """用户表。"""
 
     __tablename__ = "users"
-    __table_args__ = {
-        "mysql_engine": "InnoDB",
-        "mysql_charset": "utf8mb4",
-        "mysql_collate": "utf8mb4_unicode_ci",
-        "comment": "用户表",
-    }
+    __table_args__ = (
+        Index("uk_uid", "uid", unique=True),
+        {
+            "mysql_engine": "InnoDB",
+            "mysql_charset": "utf8mb4",
+            "mysql_collate": "utf8mb4_unicode_ci",
+            "comment": "用户表",
+        },
+    )
 
     id: Mapped[int] = mapped_column(
         BIGINT(unsigned=True), primary_key=True, autoincrement=True, comment="用户ID"
     )
+    uid: Mapped[str] = mapped_column(String(32), nullable=False, comment="用户唯一标识，对外暴露的ID")
     username: Mapped[str] = mapped_column(
         String(50), nullable=False, unique=True, comment="用户名，唯一"
     )
@@ -52,4 +56,4 @@ class User(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, comment="软删除时间")
 
     def __repr__(self) -> str:  # pragma: no cover
-        return f"<User id={self.id} username={self.username!r}>"
+        return f"<User id={self.id} uid={self.uid!r} username={self.username!r}>"
