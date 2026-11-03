@@ -57,6 +57,6 @@ export const login = async (params: LoginInfo) => {
 };
 // 退出登录
 export const logout = async () => {
-  const res = await request.post<ApiResult<UserInfo>>("/api/user/login");
+  const res = await request.post<ApiResult<UserInfo>>("/api/auth/logout");
   return res.data;
 };

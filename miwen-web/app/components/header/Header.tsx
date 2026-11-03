@@ -27,6 +27,7 @@ const App = () => {
   const userInfo = useUserStore((state) => state.userInfo);
 
   // ========== 普通函数定义 ==========
+  // ========== 获取当前用户信息 ==========
   async function getCurrentUser() {
     try {
       const res = await getMyUser();
@@ -38,13 +39,16 @@ const App = () => {
     } catch (error) {}
   }
 
+  // ========== 处理退出登录 ==========
   const handleLogout = async () => {
     try {
-      await logout();
+      const res = await logout();
+      if (res?.code === 200) {
+        useUserStore.getState().triggerRefreshUser(false);
+        userLogout();
+      }
     } catch (error) {
       console.error("退出失败", error);
-    } finally {
-      userLogout();
     }
   };
 

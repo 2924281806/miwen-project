@@ -69,6 +69,12 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str = Field(..., min_length=1, description="登录时下发的 refresh_token")
 
 
+class LogoutRequest(BaseModel):
+    """退出登录请求：refresh_token 可选，传入则连同 access_token 一起注销。"""
+
+    refresh_token: Optional[str] = Field(None, min_length=1, description="登录时下发的 refresh_token，传入则一并失效")
+
+
 class UserUpdate(BaseModel):
     """修改个人资料请求：只允许改头像和个性签名，禁止改 username / email。"""
 

@@ -6,17 +6,21 @@
 
 import logging
 import secrets
+from typing import Optional
 
 from fastapi import APIRouter, Depends, Path
+from fastapi.security import HTTPAuthorizationCredentials
+from jose import JWTError
 from sqlalchemy.orm import Session
 
 from app.crud import crud_user
 from app.database import get_db
-from app.dependencies import get_current_user, get_user_by_refresh_token
+from app.dependencies import bearer_scheme, get_current_user, get_user_by_refresh_token
 from app.exceptions import AppException, BadRequestException, ForbiddenException, NotFoundException
 from app.models.user import User
 from app.schemas.common import ApiResponse
 from app.schemas.user import (
+    LogoutRequest,
     RefreshTokenOut,
     RefreshTokenRequest,
     TokenOut,
@@ -27,9 +31,12 @@ from app.schemas.user import (
     UserUpdate,
 )
 from app.utils.jwt_util import (
+    TOKEN_TYPE_REFRESH,
     create_access_token,
     create_refresh_token,
+    decode_token,
     get_access_token_expire_seconds,
+    revoke_token,
 )
 from app.utils.password_util import get_password_hash, verify_password
 
@@ -125,6 +132,36 @@ def refresh_token(payload: RefreshTokenRequest, db: Session = Depends(get_db)) -
         ),
         msg="刷新成功",
     )
+
+
+@auth_router.post(
+    "/logout",
+    response_model=ApiResponse[None],
+    summary="退出登录",
+    description="注销当前 access_token，token 立即失效；请求体可选携带 refresh_token，传入则一并注销。",
+)
+def logout(
+    payload: Optional[LogoutRequest] = None,
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[None]:
+    """退出登录：把当前 access_token（及可选 refresh_token）记入黑名单。"""
+    revoke_token(decode_token(credentials.credentials))
+
+    if payload and payload.refresh_token:
+        try:
+            refresh_payload = decode_token(payload.refresh_token)
+        except JWTError:
+            refresh_payload = None
+        if (
+            refresh_payload
+            and refresh_payload.get("type") == TOKEN_TYPE_REFRESH
+            and refresh_payload.get("sub") == str(current_user.id)
+        ):
+            revoke_token(refresh_payload)
+
+    logger.info("用户退出登录 | user_id=%s", current_user.id)
+    return ApiResponse.ok(None, msg="退出成功")
 
 
 # ==================== 用户相关 ====================

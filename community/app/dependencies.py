@@ -14,7 +14,12 @@ from app.crud import crud_user
 from app.database import get_db
 from app.exceptions import ForbiddenException, UnauthorizedException
 from app.models.user import User
-from app.utils.jwt_util import TOKEN_TYPE_ACCESS, TOKEN_TYPE_REFRESH, decode_token
+from app.utils.jwt_util import (
+    TOKEN_TYPE_ACCESS,
+    TOKEN_TYPE_REFRESH,
+    decode_token,
+    is_token_revoked,
+)
 
 bearer_scheme = HTTPBearer(
     auto_error=False,
@@ -35,6 +40,8 @@ def _parse_payload(token: str, expected_type: str) -> dict:
         raise UnauthorizedException(f"token 类型错误，需要 {expected_type} token")
     if not payload.get("sub"):
         raise UnauthorizedException("token 缺少用户标识")
+    if is_token_revoked(payload):
+        raise UnauthorizedException("登录状态已失效，请重新登录")
     return payload
 
 

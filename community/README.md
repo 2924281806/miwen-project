@@ -1,6 +1,6 @@
 # Community Forum API（社区论坛 - 用户模块后端）
 
-基于 **FastAPI + SQLAlchemy 2.0 + MySQL 8.0** 的社区论坛后端工程，前后端分离，**仅实现用户模块**（注册 / 登录 / 刷新 token / 个人资料 / 查看他人主页），不包含帖子、评论、点赞、关注等业务。
+基于 **FastAPI + SQLAlchemy 2.0 + MySQL 8.0** 的社区论坛后端工程，前后端分离，**仅实现用户模块**（注册 / 登录 / 刷新 token / 退出登录 / 个人资料 / 查看他人主页），不包含帖子、评论、点赞、关注等业务。
 
 ## 技术栈
 
@@ -123,16 +123,17 @@ python main.py
 
 统一返回格式：`{"code": int, "msg": str, "data": any}`，成功 `code=200`，参数错误 `400`，未登录 `401`，权限不足 `403`，数据不存在 `404`，服务异常 `500`。
 
-| 方法 | 路径                      | 是否登录 | 说明                                               |
-| ---- | ------------------------- | -------- | -------------------------------------------------- |
-| POST | `/api/auth/register`      | 否       | 注册（username、email、password），用户名/邮箱唯一 |
-| POST | `/api/auth/login`         | 否       | 登录（username 或 email + password），返回双 token |
-| POST | `/api/auth/refresh-token` | 否       | 用 refresh_token 换新 access_token                 |
-| GET  | `/api/user/me`            | 是       | 获取自己的信息                                     |
-| PUT  | `/api/user/me`            | 是       | 修改自己的 avatar / bio（不可改 username、email）  |
-| GET  | `/api/user/uid/{uid}`     | 是       | 按用户唯一标识 uid 查询用户公开信息                |
-| GET  | `/api/user/{user_id}`     | 是       | 查看他人主页公开信息                               |
-| GET  | `/health`                 | 否       | 健康检查                                           |
+| 方法 | 路径                      | 是否登录 | 说明                                                 |
+| ---- | ------------------------- | -------- | ---------------------------------------------------- |
+| POST | `/api/auth/register`      | 否       | 注册（username、email、password），用户名/邮箱唯一   |
+| POST | `/api/auth/login`         | 否       | 登录（username 或 email + password），返回双 token   |
+| POST | `/api/auth/refresh-token` | 否       | 用 refresh_token 换新 access_token                   |
+| POST | `/api/auth/logout`        | 是       | 退出登录，注销当前 token（可一并注销 refresh_token） |
+| GET  | `/api/user/me`            | 是       | 获取自己的信息                                       |
+| PUT  | `/api/user/me`            | 是       | 修改自己的 avatar / bio（不可改 username、email）    |
+| GET  | `/api/user/uid/{uid}`     | 是       | 按用户唯一标识 uid 查询用户公开信息                  |
+| GET  | `/api/user/{user_id}`     | 是       | 查看他人主页公开信息                                 |
+| GET  | `/health`                 | 否       | 健康检查                                             |
 
 鉴权方式：请求头 `Authorization: Bearer <access_token>`。
 
@@ -209,7 +210,24 @@ curl -X POST "http://127.0.0.1:8000/api/auth/refresh-token" \
   -d '{"refresh_token":"<登录返回的 refresh_token>"}'
 ```
 
-### 4. 获取自己的信息
+### 4. 退出登录
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/auth/logout" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"refresh_token":"<登录返回的 refresh_token>"}'
+```
+
+```json
+{ "code": 200, "msg": "退出成功", "data": null }
+```
+
+`refresh_token` 为可选字段，不传只注销当前 access_token。注销后该 token 立即失效（再次使用返回 401 `登录状态已失效，请重新登录`），需重新登录获取新 token。
+
+> 说明：JWT 是无状态的，服务端无法删除客户端已持有的 token，因此注销通过「已注销 token 黑名单（按 jti 记录，到期自动清理）」实现。当前黑名单存放在进程内存中，适用于单进程部署；多进程 / 多实例部署时请替换为 Redis 或数据库存储。
+
+### 5. 获取自己的信息
 
 ```bash
 curl -X GET "http://127.0.0.1:8000/api/user/me" \
@@ -222,7 +240,7 @@ curl -X GET "http://127.0.0.1:8000/api/user/me" \
 { "code": 401, "msg": "未携带 token，请先登录", "data": null }
 ```
 
-### 5. 修改自己的资料
+### 6. 修改自己的资料
 
 ```bash
 curl -X PUT "http://127.0.0.1:8000/api/user/me" \
@@ -244,7 +262,7 @@ curl -X PUT "http://127.0.0.1:8000/api/user/me" \
 { "code": 400, "msg": "username: Extra inputs are not permitted", "data": null }
 ```
 
-### 6. 查看他人主页
+### 7. 查看他人主页
 
 ```bash
 curl -X GET "http://127.0.0.1:8000/api/user/2" \
@@ -257,7 +275,7 @@ curl -X GET "http://127.0.0.1:8000/api/user/2" \
 { "code": 404, "msg": "用户不存在", "data": null }
 ```
 
-### 7. 按 uid 查询用户
+### 8. 按 uid 查询用户
 
 ```bash
 curl -X GET "http://127.0.0.1:8000/api/user/uid/9f2c7a1b3d4e5f60718293a4b5c6d7e8" \
