@@ -33,3 +33,9 @@ export interface LoginInfo {
   username: string;
   password: string;
 }
+
+export interface ApiResult<T = unknown> {
+  code: number;
+  message: string;
+  data: T;
+}

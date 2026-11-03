@@ -1,54 +1,64 @@
 "use client";
 import SearchBar from "@/app/components/header/SearchBar";
-import { getMyUser } from "@/app/lib/api";
+import { getMyUser, logout } from "@/app/lib/api";
+import { useUserStore } from "@/app/store/userStore";
 import type { UserInfo } from "@/app/types/user";
 import logo from "@/public/logo.svg";
 import { PlusOutlined } from "@ant-design/icons";
-import { Avatar, Layout } from "antd";
+import { Avatar, Layout, Popover } from "antd";
 import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import styles from "./Header.module.scss";
 
 const { Header } = Layout;
 
 const App = () => {
+  // ========== 【全部Hook放在最顶部，顺序固定，永远优先执行】 ==========
   const defaultAvatar =
     "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png";
 
-  const [currentUser, setCurrentUser] = useState<UserInfo | null>(null);
   const pathname = usePathname();
+  const setUserInfo = useUserStore((state) => state.setUserInfo);
+  const userLogout = useUserStore((state) => state.logout);
+  const isLogin = useUserStore((state) => state.isLogin);
+  const userInfo = useUserStore((state) => state.userInfo);
 
-  // 登录注册页不显示菜单
-  const pathnameList = ["/login", "/register"];
-  if (pathnameList.includes(pathname)) {
-    return null;
-  }
-
-  const getCurrentUser = async () => {
+  // ========== 普通函数定义 ==========
+  async function getCurrentUser() {
     try {
       const res = await getMyUser();
       if (res?.code === 200) {
         const result = res.data as UserInfo;
-        setCurrentUser(result);
+        setUserInfo(result);
       } else {
-        setCurrentUser(null);
       }
+    } catch (error) {}
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout();
     } catch (error) {
-      setCurrentUser(null);
+      console.error("退出失败", error);
+    } finally {
+      userLogout();
     }
   };
+
+  // ========== Effect ==========
   useEffect(() => {
+    console.log("isLogin", isLogin);
     getCurrentUser();
-  }, []);
+  }, [isLogin]);
 
-  useEffect(() => {
-    console.log(styles);
-    console.log("currentUser", currentUser);
-  }, [currentUser]);
+  // ========== 条件return：必须放在所有Hook、Effect之后 ==========
+  const hideHeader = ["/login", "/register"].includes(pathname);
+  if (hideHeader) return null;
 
+  // ========== JSX ==========
   return (
     <div>
       <div className={styles["header-container"]}>
@@ -119,26 +129,31 @@ const App = () => {
 
             <div className="flex items-center gap-4">
               <SearchBar />
-              <Link href="/questions/ask" className={styles["btn-primary"]}>
+              <Link href="/waite" className={styles["btn-primary"]}>
                 <PlusOutlined />
-                提问
+                写作
               </Link>
 
-              {currentUser ? (
+              {userInfo ? (
                 <div className="flex items-center gap-3">
-                  <Link
-                    href={`/user/${currentUser.uid}`}
-                    className="flex items-center gap-2"
+                  <Popover
+                    placement="bottomLeft"
+                    content={<a onClick={handleLogout}>退出登录</a>}
                   >
-                    <Avatar
-                      src={currentUser.avatar ?? defaultAvatar}
-                      size="medium"
-                      className={styles["rounded-full"]}
-                    />
-                  </Link>
+                    <Link
+                      href={`/user/${userInfo.uid}`}
+                      className="flex items-center gap-2"
+                    >
+                      <Avatar
+                        src={userInfo.avatar ?? defaultAvatar}
+                        size="medium"
+                        className={styles["rounded-full"]}
+                      />
+                    </Link>
+                  </Popover>
                 </div>
               ) : (
-                <Link href="/auth/login" className={styles["btn-secondary"]}>
+                <Link href="/login" className={styles["btn-secondary"]}>
                   登录
                 </Link>
               )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { login } from "@/app/lib/api";
+import { useUserStore } from "@/app/store/userStore";
 import type { LoginInfo } from "@/app/types/user";
 import axios from "axios";
 import Link from "next/link";
@@ -10,11 +11,12 @@ import { useState } from "react";
 
 export default function Login() {
   const router = useRouter();
-  const [token, setToken] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const setToken = useUserStore((s) => s.setToken);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -33,20 +35,18 @@ export default function Login() {
         password,
       };
       const res = await login(param);
-      const body = res.data.access_token;
-      setToken(body || "");
-      // 后端业务错误也以 HTTP 200 返回，需要判断 code
-      // if (body.code !== 200 || !body.data) {
-      //   setError(body.msg || "登录失败");
-      //   return;
-      // }
 
-      // localStorage.setItem("access_token", body.data.access_token);
-      // localStorage.setItem("refresh_token", body.data.refresh_token);
-      // router.push("/home");
+      if (res.code !== 200 || !res.data) {
+        setError("登录失败");
+        return;
+      }
+      const accessToken = res.data.access_token;
+      setToken(accessToken);
+      useUserStore.getState().triggerRefreshUser(true);
+      router.push("/");
     } catch (err) {
       const msg = axios.isAxiosError(err) ? err.response?.data?.msg : "";
-      setError(msg || "网络异常，请稍后重试");
+      setError(msg);
     } finally {
       setLoading(false);
     }
