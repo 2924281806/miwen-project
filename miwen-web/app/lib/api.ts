@@ -60,3 +60,8 @@ export const logout = async () => {
   const res = await request.post<ApiResult<UserInfo>>("/api/auth/logout");
   return res.data;
 };
+// 上传图片
+export const uploadImage = async (data: FormData) => {
+  const res = await request.post<ApiResult<FormData>>("/api/uploadImage", data);
+  return res.data;
+};

@@ -20,6 +20,9 @@ __pycache__/
 logs/*.log
 logs/*.log.*
 
+# 上传文件（本地存储，不纳入版本管理）
+uploads/
+
 # IDE
 .idea/
 .vscode/

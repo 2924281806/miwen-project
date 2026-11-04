@@ -12,6 +12,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.exceptions import register_exception_handlers
@@ -85,6 +86,11 @@ register_exception_handlers(app)
 
 # 业务路由统一挂载在 /api 前缀下
 app.include_router(api_router, prefix="/api")
+
+# 上传图片静态目录：uploads 下文件通过 /uploads/xxx 直接访问
+upload_dir = Path(settings.UPLOAD_DIR)
+upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount(settings.UPLOAD_URL_PREFIX, StaticFiles(directory=upload_dir), name="uploads")
 
 
 @app.get("/health", tags=["系统"], summary="健康检查")

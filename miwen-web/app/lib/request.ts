@@ -5,7 +5,7 @@ import type { AxiosResponse } from "axios";
 import axios from "axios";
 import { useRouter } from "next/router";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const baseURL = process.env.NEXT_PUBLIC_API_URL;
 
 // 401 防重复跳转控制
 let isHandling401 = false;

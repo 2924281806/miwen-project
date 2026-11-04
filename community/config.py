@@ -49,6 +49,21 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_FILE: str = "logs/app.log"
 
+    # ---------- 文件上传配置 ----------
+    # 图片本地存储目录（相对项目根目录）
+    UPLOAD_DIR: str = "uploads"
+    # 图片访问路径前缀，main.py 会把它挂载为静态目录
+    UPLOAD_URL_PREFIX: str = "/uploads"
+    # 单个图片大小上限（字节），默认 5MB
+    UPLOAD_MAX_SIZE: int = 5 * 1024 * 1024
+    # 允许上传的图片后缀
+    UPLOAD_ALLOWED_EXTS: str = "jpg,jpeg,png,gif,webp,bmp"
+
+    @property
+    def upload_allowed_exts(self) -> List[str]:
+        """把逗号分隔的 UPLOAD_ALLOWED_EXTS 解析成小写后缀列表。"""
+        return [ext.strip().lower().lstrip(".") for ext in self.UPLOAD_ALLOWED_EXTS.split(",") if ext.strip()]
+
     @field_validator("SECRET_KEY")
     @classmethod
     def check_secret_key(cls, value: str) -> str:

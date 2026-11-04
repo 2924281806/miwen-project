@@ -123,19 +123,22 @@ python main.py
 
 统一返回格式：`{"code": int, "msg": str, "data": any}`，成功 `code=200`，参数错误 `400`，未登录 `401`，权限不足 `403`，数据不存在 `404`，服务异常 `500`。
 
-| 方法 | 路径                      | 是否登录 | 说明                                                 |
-| ---- | ------------------------- | -------- | ---------------------------------------------------- |
-| POST | `/api/auth/register`      | 否       | 注册（username、email、password），用户名/邮箱唯一   |
-| POST | `/api/auth/login`         | 否       | 登录（username 或 email + password），返回双 token   |
-| POST | `/api/auth/refresh-token` | 否       | 用 refresh_token 换新 access_token                   |
-| POST | `/api/auth/logout`        | 是       | 退出登录，注销当前 token（可一并注销 refresh_token） |
-| GET  | `/api/user/me`            | 是       | 获取自己的信息                                       |
-| PUT  | `/api/user/me`            | 是       | 修改自己的 avatar / bio（不可改 username、email）    |
-| GET  | `/api/user/uid/{uid}`     | 是       | 按用户唯一标识 uid 查询用户公开信息                  |
-| GET  | `/api/user/{uid}`         | 是       | 查看他人主页公开信息                                 |
-| GET  | `/health`                 | 否       | 健康检查                                             |
+| 方法 | 路径                      | 是否登录 | 说明                                                  |
+| ---- | ------------------------- | -------- | ----------------------------------------------------- |
+| POST | `/api/auth/register`      | 否       | 注册（username、email、password），用户名/邮箱唯一    |
+| POST | `/api/auth/login`         | 否       | 登录（username 或 email + password），返回双 token    |
+| POST | `/api/auth/refresh-token` | 否       | 用 refresh_token 换新 access_token                    |
+| POST | `/api/auth/logout`        | 是       | 退出登录，注销当前 token（可一并注销 refresh_token）  |
+| GET  | `/api/user/me`            | 是       | 获取自己的信息                                        |
+| PUT  | `/api/user/me`            | 是       | 修改自己的 avatar / bio（不可改 username、email）     |
+| GET  | `/api/user/uid/{uid}`     | 是       | 按用户唯一标识 uid 查询用户公开信息                   |
+| GET  | `/api/user/{uid}`         | 是       | 查看他人主页公开信息                                  |
+| POST | `/api/uploadImage`        | 是       | 上传图片（form-data 字段名 `file`），返回图片访问地址 |
+| GET  | `/health`                 | 否       | 健康检查                                              |
 
 鉴权方式：请求头 `Authorization: Bearer <access_token>`。
+
+> 图片上传接口返回结构为 `{"code": int, "message": str, "data": str}`（注意字段是 `message`），`data` 为可直接访问的图片地址；图片保存在 `uploads/` 目录下，通过 `/uploads/...` 静态路径访问。
 
 > `uid` 是注册时自动生成的 32 位十六进制用户唯一标识（唯一索引 `uk_uid`），对外用它区分用户，避免暴露自增主键 `id`。
 
