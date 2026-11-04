@@ -17,7 +17,7 @@ export const getMyUser = async () => {
 
 /** 注册 */
 export const register = async (data: RegisterDto) => {
-  const res = await request.post<ApiResult<UserInfo>>(
+  const res = await request.post<ApiResult<RegisterDto>>(
     "/api/auth/register",
     data,
   );
@@ -28,7 +28,7 @@ export const register = async (data: RegisterDto) => {
 export const refreshToken = async (data: RefreshTokenDto) => {
   const res = await request.post<
     ApiResult<{ access_token: string; refresh_token: string }>
-  >("/api/auth/refresh-token", data);
+  >("/api/auth/refreshToken", data);
   return res.data;
 };
 
@@ -43,8 +43,8 @@ export const updateProfile = async (data: UpdateProfileDto) => {
 };
 
 /** 获取其他用户信息（你这里用post，非常规，按你原有写法保留） */
-export const otherUserInfo = async (user_id: string) => {
-  const res = await request.post<ApiResult<UserInfo>>(`/api/user/${user_id}`);
+export const otherUserInfo = async (uid: string) => {
+  const res = await request.post<ApiResult<UserInfo>>(`/api/user/${uid}`);
   return res.data;
 };
 // 登录

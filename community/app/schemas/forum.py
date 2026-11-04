@@ -1,0 +1,127 @@
+"""
+文件名：app/schemas/forum.py
+作用：版块相关请求校验与返回序列化 schema，与 ORM 模型解耦。
+说明：status / created_at / updated_at / deleted_at 属于运营与审计字段，
+      不接受调用方自行设置，因此只出现在返回 schema 中。
+"""
+
+from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+def _check_name(v: str) -> str:
+    """校验版块名称：非空、不含特殊字符、长度 1-200。"""
+    if not v:
+        raise ValueError("版块名称不能为空")
+    if any(char in v for char in "!@#$%^&*()_+{}|\":;<>,.?/"):
+        raise ValueError("版块名称不能包含特殊字符")
+    if len(v) not in range(1, 201):
+        raise ValueError("版块名称长度必须在 1-200 字之间")
+    return v
+
+
+def _check_description(v: str) -> str:
+    """校验版块描述：非空、长度 1-255。"""
+    if not v:
+        raise ValueError("版块描述不能为空")
+    if len(v) not in range(1, 256):
+        raise ValueError("版块描述长度必须在 1-255 字之间")
+    return v
+
+
+def _check_icon(v: Optional[str]) -> Optional[str]:
+    """校验版块图标地址：可空，空字符串归一为 None。"""
+    if v is None:
+        return None
+    v = v.strip()
+    return v or None
+
+
+class ForumCreate(BaseModel):
+    """创建版块请求。"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "name": "FastAPI 版块",
+                "description": "一个关于 FastAPI 的版块",
+            }
+        },
+    )
+
+    name: str = Field(..., min_length=1, max_length=200, description="版块名称，1-200 字")
+    description: str = Field(..., min_length=1, max_length=255, description="版块描述，1-255 字")
+    icon: Optional[str] = Field(None, max_length=255, description="版块图标地址，可空")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        """验证版块名称。"""
+        return _check_name(v)
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str) -> str:
+        """验证版块描述。"""
+        return _check_description(v)
+
+    @field_validator("icon")
+    @classmethod
+    def validate_icon(cls, v: Optional[str]) -> Optional[str]:
+        """验证版块图标地址。"""
+        return _check_icon(v)
+
+
+class ForumUpdate(BaseModel):
+    """修改版块请求，所有字段可选，只更新传入的字段。"""
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "example": {
+                "name": "修改后的版块名称",
+                "description": "修改后的版块描述",
+            }
+        },
+    )
+
+    name: Optional[str] = Field(None, min_length=1, max_length=200, description="版块名称，1-200 字")
+    description: Optional[str] = Field(None, min_length=1, max_length=255, description="版块描述，1-255 字")
+    icon: Optional[str] = Field(None, max_length=255, description="版块图标地址，可空")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+        """验证版块名称。"""
+        return None if v is None else _check_name(v)
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: Optional[str]) -> Optional[str]:
+        """验证版块描述。"""
+        return None if v is None else _check_description(v)
+
+    @field_validator("icon")
+    @classmethod
+    def validate_icon(cls, v: Optional[str]) -> Optional[str]:
+        """验证版块图标地址。"""
+        return _check_icon(v)
+
+
+class ForumOut(BaseModel):
+    """版块响应。"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int = Field(..., description="版块 ID")
+    forum_id: int = Field(..., description="版块唯一编号，对外暴露的编号")
+    uid: int = Field(..., description="版块创建用户 ID")
+    name: str = Field(..., description="版块名称")
+    description: Optional[str] = Field(None, description="版块描述")
+    icon: Optional[str] = Field(None, description="版块图标地址")
+    status: int = Field(..., description="是否启用：0关闭，1启用")
+    created_at: datetime = Field(..., description="创建时间")
+    updated_at: datetime = Field(..., description="更新时间")

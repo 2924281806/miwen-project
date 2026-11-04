@@ -4,6 +4,9 @@
 """
 
 from app.schemas.common import ApiResponse, PageParams, PageResult
+from app.schemas.topics import TopicCreate, TopicOut, TopicUpdate
+from app.schemas.forum import ForumCreate, ForumOut, ForumUpdate
+
 from app.schemas.user import (
     RefreshTokenOut,
     RefreshTokenRequest,
@@ -27,4 +30,10 @@ __all__ = [
     "UserPublicOut",
     "TokenOut",
     "RefreshTokenOut",
+    "TopicCreate",
+    "TopicUpdate",
+    "TopicOut",
+    "ForumCreate",
+    "ForumOut",
+    "ForumUpdate",
 ]

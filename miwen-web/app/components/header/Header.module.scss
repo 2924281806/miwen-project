@@ -53,3 +53,30 @@
   width: 34px;
   height: 34px;
 }
+
+.menu-items {
+  box-sizing: border-box;
+  margin: 0px;
+  min-width: 0px;
+  color: rgb(132, 145, 165);
+  font-size: 14px;
+  align-items: center;
+  display: flex;
+  height: 36px;
+  cursor: pointer;
+  padding: 0 20px;
+  text-align: left;
+  width: 100%;
+  &:hover {
+    background-color: #f8f8fa;
+    color: #69b1ff;
+  }
+}
+.user-icon {
+  font-size: 16px;
+  margin-right: 6px;
+}
+
+.items-center {
+  cursor: pointer;
+}

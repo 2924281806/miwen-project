@@ -1,27 +1,11 @@
 "use client";
 
+import { register } from "@/app/lib/api";
 import axios from "axios";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
-
-const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-
-// 后端注册返回结构：{"code": int, "msg": str, "data": any}
-type RegisterResult = {
-  code: number;
-  msg: string;
-  data: {
-    id: number;
-    username: string;
-    email: string;
-    avatar: string | null;
-    bio: string | null;
-    is_active: boolean;
-    create_time: string;
-    update_time: string;
-  } | null;
-};
 
 // 与后端 schema 保持一致：用户名 2-50，密码 6-32，邮箱合法
 const USERNAME_MIN = 2;
@@ -32,6 +16,7 @@ const PASSWORD_MAX = 32;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Register() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,27 +50,28 @@ export default function Register() {
     setLoading(true);
     setError("");
     setSuccess(false);
-
     try {
-      const res = await axios.post<RegisterResult>(
-        `${baseUrl}/api/auth/register`,
-        { username: name, email: mail, password },
-      );
-      const body = res.data;
-
-      // 后端业务错误也以 HTTP 200 返回，需要判断 code
-      if (body.code !== 200 || !body.data) {
-        setError(body.msg || "注册失败");
+      const params = {
+        username: name,
+        email: mail,
+        password,
+      };
+      const result = await register(params);
+      if (result.code !== 200 || !result.data) {
+        setError(result.message || "注册失败");
         return;
       }
-
       setSuccess(true);
-      setUsername("");
-      setEmail("");
-      setPassword("");
+      setTimeout(() => {
+        router.push("/login");
+        setUsername("");
+        setEmail("");
+        setPassword("");
+      }, 1000);
     } catch (err) {
       const msg = axios.isAxiosError(err) ? err.response?.data?.msg : "";
       setError(msg || "网络异常，请稍后重试");
+      setSuccess(false);
     } finally {
       setLoading(false);
     }

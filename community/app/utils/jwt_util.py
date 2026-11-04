@@ -32,19 +32,19 @@ def _create_token(subject: str, token_type: str, expires_delta: timedelta) -> st
     return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def create_access_token(user_id: int) -> str:
+def create_access_token(uid: int) -> str:
     """签发 access_token。"""
     return _create_token(
-        subject=str(user_id),
+        subject=str(uid),
         token_type=TOKEN_TYPE_ACCESS,
-        expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        expires_delta=timedelta(days=settings.ACCESS_TOKEN_EXPIRE_DAYS),
     )
 
 
-def create_refresh_token(user_id: int) -> str:
+def create_refresh_token(uid: int) -> str:
     """签发 refresh_token。"""
     return _create_token(
-        subject=str(user_id),
+        subject=str(uid),
         token_type=TOKEN_TYPE_REFRESH,
         expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
@@ -59,8 +59,8 @@ def decode_token(token: str) -> Dict[str, Any]:
 
 
 def get_access_token_expire_seconds() -> int:
-    """access_token 有效期（秒），用于返回给前端。"""
-    return settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    """access_token 有效期（天），用于返回给前端。"""
+    return settings.ACCESS_TOKEN_EXPIRE_DAYS
 
 
 def _purge_expired_revoked(now: float) -> None:

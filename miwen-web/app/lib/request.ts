@@ -1,7 +1,10 @@
 import { getUserState } from "@/app/store/userStore";
 import type { ApiResult } from "@/app/types/user";
+import { whiteList } from "@/app/utils/whiteList";
 import type { AxiosResponse } from "axios";
 import axios from "axios";
+import { useRouter } from "next/router";
+
 const baseURL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // 401 防重复跳转控制
@@ -41,7 +44,8 @@ const getToken = async (): Promise<string> => {
  */
 export const clearToken = () => {
   pendingTokenPromise = null;
-  getUserState().setToken(null);
+  getUserState().triggerRefreshUser(false);
+  getUserState().logout();
 };
 
 const request = axios.create({
@@ -52,11 +56,15 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   async (config) => {
+    if (whiteList.some((item) => config?.url?.includes(item))) {
+      return config;
+    }
     const token = await getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      return config;
     }
-    return config;
+    return Promise.reject(new Error("无token，取消请求"));
   },
   (err) => Promise.reject(err),
 );
@@ -68,7 +76,6 @@ request.interceptors.response.use(
   },
   async (err) => {
     const response = err.response;
-    const whiteList = ["/login", "/register"];
     const url = response?.config?.url ?? "";
 
     if (
@@ -77,11 +84,10 @@ request.interceptors.response.use(
     ) {
       if (!isHandling401) {
         isHandling401 = true;
+        // 401 跳转到首页
+        const router = useRouter();
+        router.push("/");
         clearToken();
-        // 跳登录页
-        // if (typeof window !== "undefined") {
-        //   window.location.href = "/login";
-        // }
         clearTimeout(timer ?? undefined);
         timer = setTimeout(() => {
           isHandling401 = false;

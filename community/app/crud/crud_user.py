@@ -7,15 +7,15 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import func, select
+from sqlalchemy import Integer, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.models.user import User
 
 
-def get_user_by_id(db: Session, user_id: int, include_deleted: bool = False) -> Optional[User]:
+def get_user_by_id(db: Session, uid: int, include_deleted: bool = False) -> Optional[User]:
     """按主键查询用户，默认过滤软删除数据。"""
-    stmt = select(User).where(User.id == user_id)
+    stmt = select(User).where(User.id == uid)
     if not include_deleted:
         stmt = stmt.where(User.deleted_at.is_(None))
     return db.execute(stmt).scalar_one_or_none()
@@ -27,6 +27,17 @@ def get_user_by_uid(db: Session, uid: str, include_deleted: bool = False) -> Opt
     if not include_deleted:
         stmt = stmt.where(User.deleted_at.is_(None))
     return db.execute(stmt).scalar_one_or_none()
+
+
+def get_last_uid(db: Session) -> int:
+    """取当前 uid 的最大数值（无数据返回 0），用于生成下一个递增 uid。
+
+    uid 是字符串数字，直接 MAX 会按字典序比较，因此先转数值再取最大值；
+    统计包含软删除数据，避免已删除用户的 uid 被重复分配。
+    """
+    stmt = select(func.max(cast(User.uid, Integer)))
+    value = db.execute(stmt).scalar_one_or_none()
+    return int(value) if value is not None else 0
 
 
 def get_user_by_username(db: Session, username: str, include_deleted: bool = False) -> Optional[User]:

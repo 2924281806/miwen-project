@@ -62,7 +62,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="社区论坛 - 用户模块后端（注册 / 登录 / 刷新 token / 退出登录 / 个人资料）",
+    description="社区论坛 - 用户与帖子模块后端（注册 / 登录 / 刷新 token / 退出登录 / 个人资料 / 帖子列表 / 发帖 / 改帖 / 删帖）",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",

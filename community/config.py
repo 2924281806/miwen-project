@@ -35,7 +35,11 @@ class Settings(BaseSettings):
     # ---------- JWT 配置 ----------
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    # 访问令牌过期时间（天）
+    # 默认 7 天
+    ACCESS_TOKEN_EXPIRE_DAYS: int = 7
+    # 刷新令牌过期时间（天）
+    # 默认 7 天
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ---------- 跨域配置 ----------

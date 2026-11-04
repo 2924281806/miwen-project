@@ -58,11 +58,11 @@ def get_current_user(
 
     payload = _parse_payload(credentials.credentials, TOKEN_TYPE_ACCESS)
     try:
-        user_id = int(payload["sub"])
+        uid = int(payload["sub"])
     except (TypeError, ValueError):
         raise UnauthorizedException("无效的 token")
 
-    user = crud_user.get_user_by_id(db, user_id)
+    user = crud_user.get_user_by_id(db, uid)
     if user is None:
         raise UnauthorizedException("用户不存在或已注销")
     if user.status == 0:
@@ -76,11 +76,11 @@ def get_user_by_refresh_token(db: Session, refresh_token: str) -> User:
     """
     payload = _parse_payload(refresh_token, TOKEN_TYPE_REFRESH)
     try:
-        user_id = int(payload["sub"])
+        uid = int(payload["sub"])
     except (TypeError, ValueError):
         raise UnauthorizedException("无效的 token")
 
-    user = crud_user.get_user_by_id(db, user_id)
+    user = crud_user.get_user_by_id(db, uid)
     if user is None:
         raise UnauthorizedException("用户不存在或已注销")
     if user.status == 0:

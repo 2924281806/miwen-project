@@ -4,12 +4,17 @@ import { getMyUser, logout } from "@/app/lib/api";
 import { useUserStore } from "@/app/store/userStore";
 import type { UserInfo } from "@/app/types/user";
 import logo from "@/public/logo.svg";
-import { PlusOutlined } from "@ant-design/icons";
-import { Avatar, Layout, Popover } from "antd";
+import {
+  PlusOutlined,
+  PoweroffOutlined,
+  UserOutlined,
+} from "@ant-design/icons";
+import { Avatar, Layout, Popover, PopoverProps } from "antd";
+import { createStaticStyles } from "antd-style";
 import clsx from "clsx";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import styles from "./Header.module.scss";
 
@@ -17,6 +22,7 @@ const { Header } = Layout;
 
 const App = () => {
   // ========== 【全部Hook放在最顶部，顺序固定，永远优先执行】 ==========
+  const router = useRouter();
   const defaultAvatar =
     "https://zos.alipayobjects.com/rmsportal/jkjgkEfvpUPVyRjUImniVslZfWPnJuuZ.png";
 
@@ -26,6 +32,19 @@ const App = () => {
   const isLogin = useUserStore((state) => state.isLogin);
   const userInfo = useUserStore((state) => state.userInfo);
 
+  const classNames = createStaticStyles(({ css }) => ({
+    container: css`
+      background: "red";
+    `,
+  }));
+  const style: PopoverProps["styles"] = {
+    container: {
+      padding: "16px 0",
+    },
+    content: {
+      color: "#333",
+    },
+  };
   // ========== 普通函数定义 ==========
   // ========== 获取当前用户信息 ==========
   async function getCurrentUser() {
@@ -44,6 +63,7 @@ const App = () => {
     try {
       const res = await logout();
       if (res?.code === 200) {
+        router.push("/");
         useUserStore.getState().triggerRefreshUser(false);
         userLogout();
       }
@@ -142,18 +162,36 @@ const App = () => {
                 <div className="flex items-center gap-3">
                   <Popover
                     placement="bottomLeft"
-                    content={<a onClick={handleLogout}>退出登录</a>}
+                    trigger="click"
+                    classNames={classNames}
+                    styles={style}
+                    content={
+                      <div>
+                        <Link
+                          href={`/user/${userInfo.uid}`}
+                          className={styles["menu-items"]}
+                        >
+                          <span className={styles["user-icon"]}>
+                            <UserOutlined />
+                          </span>
+                          {userInfo.username}
+                        </Link>
+                        <div className={styles["menu-items"]}>
+                          <span className={styles["user-icon"]}>
+                            <PoweroffOutlined />
+                          </span>
+                          <div onClick={handleLogout}>退出登录</div>
+                        </div>
+                      </div>
+                    }
                   >
-                    <Link
-                      href={`/user/${userInfo.uid}`}
-                      className="flex items-center gap-2"
-                    >
+                    <div className={clsx(styles["items-center"], "flex gap-2")}>
                       <Avatar
                         src={userInfo.avatar ?? defaultAvatar}
                         size="medium"
                         className={styles["rounded-full"]}
                       />
-                    </Link>
+                    </div>
                   </Popover>
                 </div>
               ) : (

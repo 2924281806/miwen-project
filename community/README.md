@@ -132,7 +132,7 @@ python main.py
 | GET  | `/api/user/me`            | 是       | 获取自己的信息                                       |
 | PUT  | `/api/user/me`            | 是       | 修改自己的 avatar / bio（不可改 username、email）    |
 | GET  | `/api/user/uid/{uid}`     | 是       | 按用户唯一标识 uid 查询用户公开信息                  |
-| GET  | `/api/user/{user_id}`     | 是       | 查看他人主页公开信息                                 |
+| GET  | `/api/user/{uid}`         | 是       | 查看他人主页公开信息                                 |
 | GET  | `/health`                 | 否       | 健康检查                                             |
 
 鉴权方式：请求头 `Authorization: Bearer <access_token>`。
