@@ -1,4 +1,122 @@
 .write-center {
   width: 840px;
+  margin: 10px auto 0px;
+  box-sizing: border-box;
+  padding: 0px 20px;
+  background: rgb(255, 255, 255);
+  position: relative;
+}
+.write-container {
+  width: 840px;
   margin: 0 auto;
+}
+.write-input {
+  position: relative;
+  width: 100%;
+  border-width: 0px;
+  border-style: none;
+  border-color: currentcolor;
+  border-image: none;
+  margin: 16px 0px;
+  padding: 0px;
+}
+.write-textarea {
+  box-shadow: none;
+  display: block !important;
+  font-size: 32px !important;
+  font-weight: 600;
+  line-height: 1.4 !important;
+  min-height: 44px !important;
+  width: 100% !important;
+  border-width: 0px;
+  border-style: none;
+  border-color: currentcolor;
+  border-image: none;
+  outline: none;
+  padding: 0px !important;
+  &:global(::-webkit-scrollbar) {
+    display: none;
+  }
+}
+
+.write-setting {
+  box-sizing: border-box;
+  margin: 0px;
+  min-width: 0px;
+  background: #fff;
+  .write-setting-title {
+    box-sizing: border-box;
+    margin: 0px;
+    min-width: 0px;
+    color: #373a40;
+    line-height: 61px;
+    font-size: 17px;
+    font-weight: 500;
+  }
+  .write-setting-img {
+    box-sizing: border-box;
+    margin: 0px;
+    min-width: 0px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    display: flex;
+    .write-setting-img-title {
+      box-sizing: border-box;
+      margin: 0px 3px 0px 0px;
+      min-width: 0px;
+      color: #373a40;
+      display: flex;
+      line-height: 38px;
+      font-size: 15px;
+      font-weight: 400;
+      width: 110px;
+      padding-left: 10px;
+      display: inline-flex;
+      align-items: center;
+      .write-setting-img-icon {
+        font-size: 16px;
+        color: #8491a5;
+        margin-left: 5px;
+      }
+    }
+    .write-setting-img-btn {
+      box-sizing: border-box;
+      margin: 0px;
+      min-width: 0px;
+      flex: 1 1 0%;
+      .write-setting-select {
+        height: 38px;
+        width: 270px;
+      }
+      .write-setting-img-tip {
+        box-sizing: border-box;
+        margin: 8px 0px 0px;
+        min-width: 0px;
+        color: rgb(145, 150, 161);
+        font-size: 13px;
+        line-height: 20px;
+      }
+    }
+  }
+}
+
+.write-upload {
+  display: flex;
+  width: 150px;
+  height: 100px;
+  align-items: center;
+  :global(.ant-upload-select) {
+    color: #8491a5;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+.write-setting-btn {
+  box-sizing: border-box;
+  margin: 0px;
+  min-width: 0px;
+  padding: 20px 0;
+  display: flex;
+  justify-content: center;
 }

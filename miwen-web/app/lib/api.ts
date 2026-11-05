@@ -1,4 +1,10 @@
 import type {
+  CreatePostDto,
+  CreatePostDtoParams,
+  ForumListDto,
+  ForumListDtoParams,
+} from "@/app/types/forum";
+import type {
   ApiResult,
   LoginDto,
   LoginInfo,
@@ -63,5 +69,27 @@ export const logout = async () => {
 // 上传图片
 export const uploadImage = async (data: FormData) => {
   const res = await request.post<ApiResult<FormData>>("/api/uploadImage", data);
+  return res.data;
+};
+
+export const getForumList = async (params: ForumListDtoParams) => {
+  const res = await request.get<ApiResult<ForumListDto>>("/api/forum/list", {
+    params,
+  });
+  return res.data;
+};
+
+export const getAllForumList = async () => {
+  const res = await request.get<ApiResult<ForumListDto[]>>(
+    "/api/forum/allForumList",
+  );
+  return res.data;
+};
+
+export const createPost = async (data: CreatePostDtoParams) => {
+  const res = await request.post<ApiResult<CreatePostDto>>(
+    "/api/forum/createForum",
+    data,
+  );
   return res.data;
 };

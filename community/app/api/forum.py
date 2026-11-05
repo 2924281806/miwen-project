@@ -6,7 +6,7 @@
 
 import logging
 import secrets
-from typing import Optional
+from typing import List, Optional
 
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
@@ -44,6 +44,21 @@ def _get_own_forum(db: Session, forum_id: int, current_user: User) -> Forum:
 
 
 @forum_router.get(
+    "/allForumList",
+    response_model=ApiResponse[List[ForumOut]],
+    summary="查询所有板块",
+    description="返回全部未删除板块，按创建时间倒序，无任何入参，供下拉选择等场景使用。",
+)
+def get_all_forum_list(
+    db: Session = Depends(get_db),
+) -> ApiResponse[List[ForumOut]]:
+    """查询所有板块（游客可访问）。"""
+    forums = crud_forum.all_list(db)
+    data = [ForumOut.model_validate(item) for item in forums]
+    return ApiResponse.ok(data, msg="查询成功")
+
+
+@forum_router.get(
     "/list",
     response_model=ApiResponse[PageResult[ForumOut]],
     summary="查询板块列表",
@@ -51,16 +66,15 @@ def _get_own_forum(db: Session, forum_id: int, current_user: User) -> Forum:
 )
 def get_forum_list(
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
     name: Optional[str] = Query(None, description="板块名称，模糊匹配"),
     uid: Optional[int] = Query(None, ge=1, description="作者用户ID"),
     keyword: Optional[str] = Query(None, description="板块名称或描述关键字"),
     status: Optional[int] = Query(None, ge=0, le=1, description="板块状态：0关闭，1启用"),
-    include_deleted: bool = Query(False, description="是否包含已删除板块"),
+    include_deleted: Optional[bool] = Query(None, description="是否包含已删除板块"),
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
 ) -> ApiResponse[PageResult[ForumOut]]:
-    """分页查询板块列表（需登录）。"""
+    """分页查询板块列表（游客可访问）。"""
     forums = crud_forum.list_forums(
         db,
         offset=(page - 1) * pageSize,
@@ -102,8 +116,8 @@ def create_forum(
     """创建板块。"""
     forum = crud_forum.create_forum(
         db,
-        forumId=_generate_forum_id(db),
-        userId=current_user.id,
+        forum_id=_generate_forum_id(db),
+        uid=current_user.id,
         name=payload.name,
         description=payload.description,
         icon=payload.icon,

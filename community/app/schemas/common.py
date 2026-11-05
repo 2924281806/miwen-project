@@ -35,17 +35,17 @@ class PageParams(BaseModel):
     """分页请求参数（预留，后续列表接口复用）。"""
 
     page: int = Field(1, ge=1, description="页码，从 1 开始")
-    page_size: int = Field(10, ge=1, le=100, description="每页条数，1-100")
+    pageSize: int = Field(10, ge=1, le=100, description="每页条数，1-100")
 
     @property
     def offset(self) -> int:
         """数据库查询偏移量。"""
-        return (self.page - 1) * self.page_size
+        return (self.page - 1) * self.pageSize
 
     @property
     def limit(self) -> int:
         """数据库查询条数。"""
-        return self.page_size
+        return self.pageSize
 
 
 class PageResult(BaseModel, Generic[DataT]):
@@ -54,16 +54,16 @@ class PageResult(BaseModel, Generic[DataT]):
     items: List[DataT] = Field(default_factory=list, description="当前页数据")
     total: int = Field(0, description="总记录数")
     page: int = Field(1, description="当前页码")
-    page_size: int = Field(10, description="每页条数")
+    pageSize: int = Field(10, description="每页条数")
     pages: int = Field(0, description="总页数")
 
     @classmethod
-    def create(cls, items: List[DataT], total: int, page: int, page_size: int) -> "PageResult[DataT]":
+    def create(cls, items: List[DataT], total: int, page: int, pageSize: int) -> "PageResult[DataT]":
         """根据查询结果构造分页对象，自动计算总页数。"""
         return cls(
             items=items,
             total=total,
             page=page,
-            page_size=page_size,
-            pages=ceil(total / page_size) if page_size else 0,
+            pageSize=pageSize,
+            pages=ceil(total / pageSize) if pageSize else 0,
         )

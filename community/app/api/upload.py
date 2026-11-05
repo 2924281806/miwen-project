@@ -106,5 +106,5 @@ def upload_image(
     (save_dir / filename).write_bytes(content)
 
     url = f"{str(request.base_url).rstrip('/')}{settings.UPLOAD_URL_PREFIX}/{sub_dir}/{filename}"
-    logger.info("图片上传成功 | user_id=%s size=%s url=%s", current_user.id, len(content), url)
+    logger.info("图片上传成功 | uid=%s size=%s url=%s", current_user.id, len(content), url)
     return UploadImageResponse(code=200, message="上传成功", data=url)

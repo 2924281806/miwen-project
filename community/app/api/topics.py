@@ -52,7 +52,7 @@ def _get_own_topic(db: Session, topic_id: int, current_user: User) -> Topic:
 )
 def list_topics(
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
-    page_size: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
+    pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
     forum_id: Optional[int] = Query(None, ge=1, description="按所属版块筛选"),
     uid: Optional[int] = Query(None, ge=1, description="按发帖用户筛选"),
     keyword: Optional[str] = Query(None, max_length=200, description="标题关键字，模糊匹配"),
@@ -60,11 +60,11 @@ def list_topics(
     db: Session = Depends(get_db),
 ) -> ApiResponse[PageResult[TopicOut]]:
     """查询帖子列表（游客可访问）。"""
-    offset = (page - 1) * page_size
+    offset = (page - 1) * pageSize
     topics = crud_topic.list_topics(
         db,
         offset=offset,
-        limit=page_size,
+        limit=pageSize,
         forum_id=forum_id,
         uid=uid,
         keyword=keyword,
@@ -78,7 +78,7 @@ def list_topics(
         status=status,
     )
     items = [TopicOut.model_validate(topic) for topic in topics]
-    return ApiResponse.ok(PageResult.create(items, total, page, pageSize=page_size))
+    return ApiResponse.ok(PageResult.create(items, total, page, pageSize=pageSize))
 
 
 @topic_router.post(

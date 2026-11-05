@@ -70,7 +70,7 @@ def _apply_filters(
     uid: Optional[int] = None,
     keyword: Optional[str] = None,
     status: Optional[int] = None,
-    include_deleted: bool = False,
+    include_deleted: Optional[bool] = False,
 ):
     """给查询语句追加列表筛选条件（列表与计数复用，保证口径一致）。"""
     if not include_deleted:
@@ -109,6 +109,11 @@ def list_forums(
     stmt = stmt.order_by(Forum.created_at.desc()).offset(offset).limit(limit)
     return list(db.execute(stmt).scalars().all())
 
+def all_list(db: Session) -> List[Forum]:
+    """查询全部版块：按创建时间倒序，默认过滤软删除数据。"""
+    stmt = _apply_filters(select(Forum))
+    stmt = stmt.order_by(Forum.created_at.desc())
+    return list(db.execute(stmt).scalars().all())
 
 def count_forums(
     db: Session,
