@@ -1,6 +1,6 @@
 """
 文件名：app/schemas/forum_category.py
-作用：版块分类请求校验与返回序列化 schema，与 ORM 模型解耦。
+作用：圈子分类请求校验与返回序列化 schema，与 ORM 模型解耦。
 说明：分类ID 由数据库自增生成，创建时间与删除时间属于审计字段，均不接受调用方设置。
 """
 
@@ -49,7 +49,7 @@ class ForumCategoryUpdate(BaseModel):
 
 
 class ForumCategoryOut(BaseModel):
-    """版块分类响应。"""
+    """圈子分类响应。"""
 
     model_config = ConfigDict(from_attributes=True)
 

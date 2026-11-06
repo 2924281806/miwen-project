@@ -6,13 +6,16 @@ import type { ApiResult } from "@/app/types/user";
 import { PlusOutlined } from "@ant-design/icons";
 import type { FormProps, RadioChangeEvent } from "antd";
 import { Button, Form, Input, message, Radio, Space, Typography } from "antd";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import styles from "./newForum.module.scss";
+import styles from "./newCircle.module.scss";
 
 const { TextArea } = Input;
 const { Text } = Typography;
 
-export default function NewForum() {
+export default function NewCircle() {
+  const router = useRouter();
   const [form] = Form.useForm();
   const [value, setValue] = useState("");
   const [imgList, setImgList] = useState<string[]>([]);
@@ -20,7 +23,7 @@ export default function NewForum() {
     undefined,
   );
 
-  // 分类列表：value 必须是后端返回的分类真实 id，否则创建板块会参数校验失败
+  // 分类列表：value 必须是后端返回的分类真实 id，否则创建圈子会参数校验失败
   const [categoryList, setCategoryList] = useState<
     { label: string; value: number }[]
   >([]);
@@ -63,9 +66,6 @@ export default function NewForum() {
   const onChange = ({ target: { value } }: RadioChangeEvent) => {
     setCategoryValue(value as number);
   };
-  const onChangeJoin = ({ target: { value } }: RadioChangeEvent) => {
-    console.log("radio2", value);
-  };
   const onFinish: FormProps<CreateForumDtoParams>["onFinish"] = async (
     values,
   ) => {
@@ -73,24 +73,29 @@ export default function NewForum() {
     try {
       const res = await createForum(values);
       if (res.code === 200) {
-        message.success("新建板块成功");
-        // 跳转到新建板块详情页
+        message.success("新建圈子成功");
         form.resetFields();
         setImgList([]);
         setValue("");
         setCategoryValue(undefined);
+        setTimeout(() => {
+          router.push(`/group/${res?.data?.forum_id}`);
+        }, 1000);
         return;
       }
-      message.error(res.msg || res.msg || "新建板块失败");
+      message.error(res.msg || "新建圈子失败");
     } catch (err) {
-      message.error((err as Error).message || "新建板块失败");
+      const msg = axios.isAxiosError(err)
+        ? err.response?.data?.msg || err.message
+        : (err as Error).message;
+      message.error(msg || "新建圈子失败");
     }
   };
 
   return (
-    <div className={styles["forum-container"]}>
-      <div className={styles["forum-center"]}>
-        <div className={styles["forum-title"]}>新建版块</div>
+    <div className={styles["circle-container"]}>
+      <div className={styles["circle-center"]}>
+        <div className={styles["circle-title"]}>新建圈子</div>
         <Form
           initialValues={{
             join_type: "public",
@@ -102,8 +107,8 @@ export default function NewForum() {
           labelCol={{ flex: "80px" }}
           labelAlign="end"
         >
-          <Form.Item name="name" label="版块名称" rules={[{ required: true }]}>
-            <Input placeholder="请输入版块名称" />
+          <Form.Item name="name" label="圈子名称" rules={[{ required: true }]}>
+            <Input placeholder="请输入圈子名称" />
           </Form.Item>
           <Form.Item
             name="description"
@@ -113,28 +118,28 @@ export default function NewForum() {
             <TextArea
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              placeholder="请输入版块描述"
+              placeholder="请输入圈子描述"
               autoSize={{ minRows: 3, maxRows: 5 }}
             />
           </Form.Item>
-          <Form.Item name="icon" label="版块图标">
+          <Form.Item name="icon" label="圈子图标">
             <ImageUpload
               value={imgList}
               onChange={setImgList}
-              multiple
+              multiple={false}
               maxCount={1}
               maxSize={2}
-              buttonText="添加版块图标"
+              buttonText="添加圈子图标"
               customUpload={uploadApi}
               slotTrigger={
                 <div>
                   <PlusOutlined />
-                  添加版块图标
+                  添加圈子图标
                 </div>
               }
             ></ImageUpload>
           </Form.Item>
-          <Form.Item name="category_id" label="版块分类">
+          <Form.Item name="category_id" label="圈子分类">
             <Radio.Group
               onChange={onChange}
               className={styles["category-group"]}
@@ -174,12 +179,12 @@ export default function NewForum() {
             </Radio.Group>
           </Form.Item>
           <Form.Item name="join_type" label="加入方式">
-            <Radio.Group options={joinOptions} onChange={onChangeJoin} />
+            <Radio.Group options={joinOptions} />
           </Form.Item>
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit">
-                发布板块
+                发布圈子
               </Button>
             </Space>
           </Form.Item>

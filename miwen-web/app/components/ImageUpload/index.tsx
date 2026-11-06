@@ -45,12 +45,12 @@ export default function ImageUpload(props: ImageUploadProps) {
       return;
     }
     try {
-      customUpload(rawFile, (url) => {
+      await customUpload(rawFile, (url) => {
         const newList = multiple ? [...value, url] : [url];
         onChange?.(newList);
       });
     } catch (err) {
-      message.error("上传失败");
+      message.error(err instanceof Error ? err.message : "上传失败");
     }
   };
 

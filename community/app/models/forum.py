@@ -17,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from app.models.topics import Topic
 
 class Forum(Base):
-    """版块表。"""
+    """圈子表。"""
     __tablename__ = "forum"
     __table_args__ = (
         Index("uk_forum_id", "forum_id", unique=True),
@@ -27,14 +27,14 @@ class Forum(Base):
             "mysql_engine": "InnoDB",
             "mysql_charset": "utf8mb4",
             "mysql_collate": "utf8mb4_unicode_ci",
-            "comment": "版块表",
+            "comment": "圈子表",
         },
     )
     id: Mapped[int] = mapped_column(
-        BIGINT(unsigned=True), primary_key=True, autoincrement=True, comment="版块ID"
+        BIGINT(unsigned=True), primary_key=True, autoincrement=True, comment="圈子ID"
     )
     forum_id: Mapped[int] = mapped_column(
-        BIGINT(unsigned=True), nullable=False, comment="版块唯一编号，对外暴露的编号"
+        BIGINT(unsigned=True), nullable=False, comment="圈子唯一编号，对外暴露的编号"
     )
     category_id: Mapped[int] = mapped_column(
         BIGINT(unsigned=True),
@@ -46,11 +46,11 @@ class Forum(Base):
         String(100), nullable=False, comment="所属分类名称，与 forum_category.name 保持一致"
     )
     uid: Mapped[int] = mapped_column(
-        BIGINT(unsigned=True), nullable=False, comment="版块创建用户ID"
+        BIGINT(unsigned=True), nullable=False, comment="圈子创建用户ID"
     )
-    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="版块名称")
-    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="版块描述")
-    icon: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="版块图标地址")
+    name: Mapped[str] = mapped_column(String(200), nullable=False, comment="圈子名称")
+    description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="圈子描述")
+    icon: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="圈子图标地址")
     status: Mapped[int] = mapped_column(
         TINYINT, nullable=False, default=0, server_default=text("0"), comment="是否启用：0关闭，1启用"
     )

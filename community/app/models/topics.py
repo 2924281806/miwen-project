@@ -43,7 +43,7 @@ class Topic(Base):
         BIGINT(unsigned=True),
         ForeignKey("forum.forum_id", ondelete="RESTRICT", onupdate="CASCADE"),
         nullable=False,
-        comment="所属版块ID，关联 forum.forum_id",
+        comment="所属圈子ID，关联 forum.forum_id",
     )
     uid: Mapped[int] = mapped_column(
         BIGINT(unsigned=True), nullable=False, comment="发帖用户ID"

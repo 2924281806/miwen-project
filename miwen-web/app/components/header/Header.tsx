@@ -51,11 +51,11 @@ const App = () => {
     try {
       const res = await getMyUser();
       if (res?.code === 200) {
-        const result = res.data as UserInfo;
-        setUserInfo(result);
-      } else {
+        setUserInfo(res.data as UserInfo);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("获取用户信息失败", error);
+    }
   }
 
   // ========== 处理退出登录 ==========
@@ -74,8 +74,8 @@ const App = () => {
 
   // ========== Effect ==========
   useEffect(() => {
-    console.log("isLogin", isLogin);
     getCurrentUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLogin]);
 
   // ========== 条件return：必须放在所有Hook、Effect之后 ==========
@@ -142,7 +142,7 @@ const App = () => {
                   <div
                     className={clsx(
                       "transition-colors",
-                      pathname === "/group" && "text-lg font-bold",
+                      pathname.startsWith("/group") && "text-lg font-bold",
                     )}
                   >
                     圈子

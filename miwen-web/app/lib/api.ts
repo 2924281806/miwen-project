@@ -4,6 +4,7 @@ import type {
   ForumCategoryDto,
   ForumListDto,
   ForumListDtoParams,
+  PageResult,
 } from "@/app/types/forum";
 import type { CreatePostDto, CreatePostDtoParams } from "@/app/types/topic";
 import type {
@@ -11,6 +12,7 @@ import type {
   LoginDto,
   LoginInfo,
   RefreshTokenDto,
+  RefreshTokenOutDto,
   RegisterDto,
   UpdateProfileDto,
   UserInfo,
@@ -23,20 +25,21 @@ export const getMyUser = async () => {
   return res.data;
 };
 
-/** 注册 */
+/** 注册（后端返回注册后的用户信息 UserOut） */
 export const register = async (data: RegisterDto) => {
-  const res = await request.post<ApiResult<RegisterDto>>(
+  const res = await request.post<ApiResult<UserInfo>>(
     "/api/auth/register",
     data,
   );
   return res.data;
 };
 
-/** 刷新token */
+/** 刷新token（后端只返回 access_token / token_type / expires_in） */
 export const refreshToken = async (data: RefreshTokenDto) => {
-  const res = await request.post<
-    ApiResult<{ access_token: string; refresh_token: string }>
-  >("/api/auth/refreshToken", data);
+  const res = await request.post<ApiResult<RefreshTokenOutDto>>(
+    "/api/auth/refreshToken",
+    data,
+  );
   return res.data;
 };
 
@@ -46,13 +49,16 @@ export const refreshToken = async (data: RefreshTokenDto) => {
  * ⚠️ 原代码函数名 login 是错误命名，改成 updateProfile
  */
 export const updateProfile = async (data: UpdateProfileDto) => {
-  const res = await request.put<ApiResult<UserInfo>>("/api/user/me", data);
+  const res = await request.post<ApiResult<UserInfo>>(
+    "/api/user/updateUser",
+    data,
+  );
   return res.data;
 };
 
-/** 获取其他用户信息（你这里用post，非常规，按你原有写法保留） */
+/** 获取其他用户信息（后端为 GET /api/user/{uid}） */
 export const otherUserInfo = async (uid: string) => {
-  const res = await request.post<ApiResult<UserInfo>>(`/api/user/${uid}`);
+  const res = await request.get<ApiResult<UserInfo>>(`/api/user/${uid}`);
   return res.data;
 };
 // 登录
@@ -63,9 +69,9 @@ export const login = async (params: LoginInfo) => {
   );
   return res.data;
 };
-// 退出登录
+// 退出登录（后端返回 data 为 null）
 export const logout = async () => {
-  const res = await request.post<ApiResult<UserInfo>>("/api/auth/logout");
+  const res = await request.post<ApiResult<null>>("/api/auth/logout");
   return res.data;
 };
 // 上传图片
@@ -75,9 +81,10 @@ export const uploadImage = async (data: FormData) => {
 };
 
 export const getForumList = async (params: ForumListDtoParams) => {
-  const res = await request.get<ApiResult<ForumListDto>>("/api/forum/list", {
-    params,
-  });
+  const res = await request.get<ApiResult<PageResult<ForumListDto>>>(
+    "/api/forum/list",
+    { params },
+  );
   return res.data;
 };
 
@@ -88,7 +95,7 @@ export const getAllForumList = async () => {
   return res.data;
 };
 
-/** 获取所有板块分类（用于新建板块时选择分类，value 必须是分类真实 id） */
+/** 获取所有圈子分类（用于新建圈子时选择分类，value 必须是分类真实 id） */
 export const getAllCategoryList = async () => {
   const res = await request.get<ApiResult<ForumCategoryDto[]>>(
     "/api/forumCategory/allCategoryList",

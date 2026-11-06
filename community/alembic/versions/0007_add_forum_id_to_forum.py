@@ -1,6 +1,6 @@
 """
 文件名：alembic/versions/0007_add_forum_id_to_forum.py
-作用：为 forum 表新增 forum_id 字段（版块唯一编号，唯一索引 uk_forum_id）。
+作用：为 forum 表新增 forum_id 字段（圈子唯一编号，唯一索引 uk_forum_id）。
 说明：先加可空列 -> 回填历史数据 -> 改为 NOT NULL -> 建唯一索引，保证存量数据可平滑升级。
 """
 import sqlalchemy as sa
@@ -16,7 +16,7 @@ def upgrade() -> None:
     """新增 forum_id 字段。"""
     op.add_column(
         "forum",
-        sa.Column("forum_id", mysql.BIGINT(unsigned=True), nullable=True, comment="版块唯一编号，对外暴露的编号"),
+        sa.Column("forum_id", mysql.BIGINT(unsigned=True), nullable=True, comment="圈子唯一编号，对外暴露的编号"),
     )
     op.execute("UPDATE `forum` SET `forum_id` = `id` WHERE `forum_id` IS NULL")
    
@@ -25,7 +25,7 @@ def upgrade() -> None:
         "forum_id",
         existing_type=mysql.BIGINT(unsigned=True),
         nullable=False,
-        comment="版块唯一编号，对外暴露的编号",
+        comment="圈子唯一编号，对外暴露的编号",
     )
     op.create_index("uk_forum_id", "forum", ["forum_id"], unique=True)
 

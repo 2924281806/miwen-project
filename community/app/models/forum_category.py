@@ -17,7 +17,7 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 class ForumCategory(Base):
-    """版块分类表。"""
+    """圈子分类表。"""
 
     __tablename__ = "forum_category"
     __table_args__ = (
@@ -26,7 +26,7 @@ class ForumCategory(Base):
             "mysql_engine": "InnoDB",
             "mysql_charset": "utf8mb4",
             "mysql_collate": "utf8mb4_unicode_ci",
-            "comment": "版块分类表",
+            "comment": "圈子分类表",
         },
     )
 

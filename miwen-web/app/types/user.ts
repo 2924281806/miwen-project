@@ -1,11 +1,19 @@
-// 用户信息返回结构
+// 用户信息（对齐后端 UserOut / UserPublicOut 返回字段）
 export interface UserInfo {
   id: number;
   uid: string;
   username: string;
-  email: string;
-  avatar?: string;
-  bio?: string;
+  email?: string | null;
+  nickname?: string | null;
+  avatar?: string | null;
+  /** 个性签名，对应后端 signature 字段 */
+  signature?: string | null;
+  status?: number;
+  level?: number;
+  points?: number;
+  last_login_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // 注册入参
@@ -26,8 +34,18 @@ export interface UpdateProfileDto {
   bio?: string;
 }
 
+// 登录返回的 token 信息（对齐后端 TokenOut）
 export interface LoginDto {
   access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+}
+// 刷新 token 返回（对齐后端 RefreshTokenOut）
+export interface RefreshTokenOutDto {
+  access_token: string;
+  token_type: string;
+  expires_in: number;
 }
 export interface LoginInfo {
   username: string;
@@ -36,9 +54,7 @@ export interface LoginInfo {
 
 export interface ApiResult<T = unknown> {
   code: number;
-  /** 统一业务接口的提示字段（/api/auth、/api/forum 等） */
+  /** 提示信息，所有接口（含上传）统一使用 msg 字段 */
   msg?: string;
-  /** 上传接口沿用 message 字段（/api/uploadImage） */
-  message: string;
   data: T;
 }

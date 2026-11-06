@@ -1,74 +1,36 @@
 "use client";
+import ImageUpload from "@/app/components/ImageUpload";
 import TinyEditor from "@/app/components/markdown/TinyEditor";
-import { createPost, getAllForumList } from "@/app/lib/api";
+import { createPost, getAllForumList, uploadImage } from "@/app/lib/api";
+import type { ApiResult } from "@/app/types/user";
 import { PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import type { GetProp, UploadProps } from "antd";
-import { Button, Input, message, Popover, Select, Upload } from "antd";
+import { Button, Input, message, Popover, Select } from "antd";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "./write.module.scss";
 
-type FileType = Parameters<GetProp<UploadProps, "beforeUpload">>[0];
-
 const { TextArea } = Input;
 
-const getBase64 = (img: FileType, callback: (url: string) => void) => {
-  const reader = new FileReader();
-  reader.addEventListener("load", () => callback(reader.result as string));
-  reader.readAsDataURL(img);
-};
-
 export default function Waite() {
+  const router = useRouter();
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>();
+  const [imgList, setImgList] = useState<string[]>([]);
   const [forumId, setForumId] = useState<number>();
   const [forumList, setForumList] = useState<
     { value: number; label: string }[]
   >([]);
 
-  const props: UploadProps = {
-    name: "avatar",
-    accept: "image/jpeg,image/png,image/jpg,image/gif",
-    listType: "picture-card",
-    showUploadList: false,
-    maxCount: 1,
-    className: styles["write-upload"],
-    beforeUpload(file: FileType) {
-      return beforeUpload(file);
-    },
-    onChange(info) {
-      if (info.file.status === "uploading") {
-        console.log(info.file, info.fileList);
-        setLoading(true);
-        return;
-      }
-      if (info.file.status === "done") {
-        // 上传成功后，获取图片的base64编码
-        getBase64(info.file.originFileObj as FileType, (url) => {
-          message.success(`${info.file.name} file uploaded successfully`);
-          setLoading(false);
-          setImageUrl(url);
-        });
-      }
-    },
-  };
-  const beforeUpload = (file: FileType) => {
-    const isJpgOrPng =
-      file.type === "image/jpeg" ||
-      file.type === "image/png" ||
-      file.type === "image/jpg" ||
-      file.type === "image/gif";
-    if (!isJpgOrPng) {
-      message.error(
-        "You can only upload <JPEG>/<JPG>/<PNG>/<GIF> format file!",
-      );
+  // 自定义上传图标
+  const uploadApi = async (file: File, onSuccess: (url: string) => void) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res: ApiResult<string> = await uploadImage(fd);
+    if (res.code === 200) {
+      onSuccess(res.data);
+      return;
     }
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-      message.error("Image must smaller than 2MB!");
-    }
-    return isJpgOrPng && isLt2M;
+    throw new Error(res.msg || "上传图片失败");
   };
 
   // ========== Get Forum ==========
@@ -85,7 +47,6 @@ export default function Waite() {
   };
   // ========== Post ==========
   const handlePost = async () => {
-    console.log(title, content, forumId);
     if (!title) {
       message.error("请输入帖子标题！");
       return;
@@ -95,24 +56,33 @@ export default function Waite() {
       return;
     }
     if (!forumId) {
-      message.error("请选择帖子板块！");
+      message.error("请选择帖子圈子！");
       return;
     }
     const res = await createPost({
       title: title,
       content: content,
-      cover: imageUrl,
+      cover: imgList[0],
       forum_id: forumId,
     });
     if (res?.code === 200) {
       message.success("帖子发布成功！");
-      // 跳转到帖子详情页
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      timer = setTimeout(() => {
+        // 跳转到帖子详情页
+        router.push(`/topics/${res?.data?.topic_id}`);
+        clearTimeout(timer ?? undefined);
+        timer = null;
+      }, 1000);
     }
   };
 
   // ========== Effect ==========
   useEffect(() => {
-    getForum();
+    const load = async () => {
+      await getForum();
+    };
+    load();
   }, []);
 
   return (
@@ -147,10 +117,20 @@ export default function Waite() {
             </span>
             <div className={styles["write-setting-img-btn"]}>
               <div>
-                <Upload {...props}>
-                  <PlusOutlined />
-                  添加帖子封面
-                </Upload>
+                <ImageUpload
+                  value={imgList}
+                  onChange={setImgList}
+                  multiple={false}
+                  maxCount={1}
+                  maxSize={2}
+                  customUpload={uploadApi}
+                  slotTrigger={
+                    <div>
+                      <PlusOutlined />
+                      添加帖子封面
+                    </div>
+                  }
+                ></ImageUpload>
               </div>
               <div className={styles["write-setting-img-tip"]}>
                 图片上传格式支持 JPEG、JPG、PNG
@@ -159,9 +139,9 @@ export default function Waite() {
           </div>
           <div className={styles["write-setting-img"]}>
             <span className={styles["write-setting-img-title"]}>
-              选择板块
+              选择圈子
               <Popover
-                content="该帖子发布在哪个板块下面！"
+                content="该帖子发布在哪个圈子下面！"
                 placement="bottomRight"
                 trigger="hover"
               >
@@ -181,7 +161,7 @@ export default function Waite() {
           </div>
           <div className={styles["write-setting-btn"]}>
             <Button type="primary" onClick={handlePost}>
-              发布
+              发布帖子
             </Button>
           </div>
         </div>

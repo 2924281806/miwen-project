@@ -62,11 +62,15 @@ export default function Register() {
         return;
       }
       setSuccess(true);
-      setTimeout(() => {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      timer = setTimeout(() => {
+        // 跳转到帖子详情页
         router.push("/login");
         setUsername("");
         setEmail("");
         setPassword("");
+        clearTimeout(timer ?? undefined);
+        timer = null;
       }, 1000);
     } catch (err) {
       const msg = axios.isAxiosError(err) ? err.response?.data?.msg : "";

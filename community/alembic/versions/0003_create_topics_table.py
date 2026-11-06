@@ -19,7 +19,7 @@ def upgrade() -> None:
     op.create_table(
         "topics",
         sa.Column("id", mysql.BIGINT(unsigned=True), autoincrement=True, nullable=False, comment="主题ID"),
-        sa.Column("forum_id", mysql.BIGINT(unsigned=True), nullable=False, comment="所属版块ID"),
+        sa.Column("forum_id", mysql.BIGINT(unsigned=True), nullable=False, comment="所属圈子ID"),
         sa.Column("uid", mysql.BIGINT(unsigned=True), nullable=False, comment="发帖用户ID"),
         sa.Column("title", sa.String(200), nullable=False, comment="帖子标题"),
         sa.Column("cover", sa.String(255), nullable=True, comment="封面图"),

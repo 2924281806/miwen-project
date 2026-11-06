@@ -1,7 +1,7 @@
 """
 文件名：alembic/versions/0010_create_forum_category_table.py
-作用：新增版块分类表 forum_category，并给 forum 表增加 category_id / category_name 字段。
-说明：forum.category_id 外键关联 forum_category.id；存量版块先回填到"默认分类"，再收紧为非空，
+作用：新增圈子分类表 forum_category，并给 forum 表增加 category_id / category_name 字段。
+说明：forum.category_id 外键关联 forum_category.id；存量圈子先回填到"默认分类"，再收紧为非空，
       避免加非空约束时因历史数据为空而失败。
 """
 
@@ -40,7 +40,7 @@ def upgrade() -> None:
         mysql_engine="InnoDB",
         mysql_charset="utf8mb4",
         mysql_collate="utf8mb4_unicode_ci",
-        comment="版块分类表",
+        comment="圈子分类表",
     )
 
     bind = op.get_bind()

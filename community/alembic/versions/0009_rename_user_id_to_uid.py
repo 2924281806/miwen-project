@@ -17,7 +17,7 @@ def upgrade() -> None:
     """重命名列与索引。"""
     op.execute(
         "ALTER TABLE `forum` CHANGE COLUMN `user_id` `uid` "
-        "BIGINT(20) UNSIGNED NOT NULL COMMENT '版块创建用户ID'"
+        "BIGINT(20) UNSIGNED NOT NULL COMMENT '圈子创建用户ID'"
     )
     op.execute("ALTER TABLE `forum` RENAME INDEX `idx_user_id` TO `idx_uid`")
 
@@ -47,5 +47,5 @@ def downgrade() -> None:
     op.execute("ALTER TABLE `forum` RENAME INDEX `idx_uid` TO `idx_user_id`")
     op.execute(
         "ALTER TABLE `forum` CHANGE COLUMN `uid` `user_id` "
-        "BIGINT(20) UNSIGNED NOT NULL COMMENT '版块创建用户ID'"
+        "BIGINT(20) UNSIGNED NOT NULL COMMENT '圈子创建用户ID'"
     )

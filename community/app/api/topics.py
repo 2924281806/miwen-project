@@ -48,12 +48,12 @@ def _get_own_topic(db: Session, topic_id: int, current_user: User) -> Topic:
     "/list",
     response_model=ApiResponse[PageResult[TopicOut]],
     summary="获取帖子列表",
-    description="分页查询帖子，置顶优先、其次按最后回复时间倒序；可按版块、作者、标题关键字与状态筛选，默认只返回正常状态（status=1）的帖子。",
+    description="分页查询帖子，置顶优先、其次按最后回复时间倒序；可按圈子、作者、标题关键字与状态筛选，默认只返回正常状态（status=1）的帖子。",
 )
 def list_topics(
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
-    forum_id: Optional[int] = Query(None, ge=1, description="按所属版块筛选"),
+    forum_id: Optional[int] = Query(None, ge=1, description="按所属圈子筛选"),
     uid: Optional[int] = Query(None, ge=1, description="按发帖用户筛选"),
     keyword: Optional[str] = Query(None, max_length=200, description="标题关键字，模糊匹配"),
     status: Optional[int] = Query(1, ge=0, le=2, description="状态：0待审核 1正常 2隐藏，不传表示全部"),
@@ -85,7 +85,7 @@ def list_topics(
     "/createPost",
     response_model=ApiResponse[TopicOut],
     summary="发布帖子",
-    description="登录用户发帖，发帖人自动取自当前登录用户，并自动生成帖子唯一编号 topic_id；所属版块必须存在且处于启用状态；置顶、加精、关闭回复、浏览量等运营字段使用数据库默认值。",
+    description="登录用户发帖，发帖人自动取自当前登录用户，并自动生成帖子唯一编号 topic_id；所属圈子必须存在且处于启用状态；置顶、加精、关闭回复、浏览量等运营字段使用数据库默认值。",
 )
 def create_topic(
     payload: TopicCreate,
@@ -95,9 +95,9 @@ def create_topic(
     """发布新帖子。"""
     forum = crud_forum.get_forum_by_forum_id(db, payload.forum_id)
     if forum is None:
-        raise BadRequestException("版块不存在")
+        raise BadRequestException("圈子不存在")
     if forum.status != 1:
-        raise BadRequestException("版块已关闭，无法发帖")
+        raise BadRequestException("圈子已关闭，无法发帖")
 
     topic = crud_topic.create_topic(
         db,

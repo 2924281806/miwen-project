@@ -27,7 +27,7 @@ class TopicCreate(BaseModel):
         },
     )
 
-    forum_id: int = Field(..., ge=1, description="所属版块编号，对应 forum.forum_id")
+    forum_id: int = Field(..., ge=1, description="所属圈子编号，对应 forum.forum_id")
     title: str = Field(..., min_length=1, max_length=200, description="帖子标题，1-200 字")
     content: str = Field(..., min_length=1, max_length=10000, description="帖子内容，1-10000 字")
     cover: Optional[str] = Field(None, max_length=255, description="封面图地址，可空")
@@ -57,7 +57,7 @@ class TopicCreate(BaseModel):
 
 
 class TopicUpdate(BaseModel):
-    """修改帖子请求：只允许改标题、内容与封面，版块归属、置顶、加精等由运营后台维护。"""
+    """修改帖子请求：只允许改标题、内容与封面，圈子归属、置顶、加精等由运营后台维护。"""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -110,7 +110,7 @@ class TopicOut(BaseModel):
 
     id: int = Field(..., description="主题ID")
     topic_id: int = Field(..., description="帖子唯一编号，对外暴露的编号")
-    forum_id: int = Field(..., description="所属版块编号，对应 forum.forum_id")
+    forum_id: int = Field(..., description="所属圈子编号，对应 forum.forum_id")
     uid: int = Field(..., description="发帖用户ID")
     title: str = Field(..., description="帖子标题")
     content: str = Field(..., description="帖子内容")

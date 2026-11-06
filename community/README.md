@@ -1,6 +1,6 @@
-# Community Forum API（社区论坛 - 用户模块后端）
+# Community Forum API（社区论坛 - 用户 / 帖子 / 圈子模块后端）
 
-基于 **FastAPI + SQLAlchemy 2.0 + MySQL 8.0** 的社区论坛后端工程，前后端分离，**仅实现用户模块**（注册 / 登录 / 刷新 token / 退出登录 / 个人资料 / 查看他人主页），不包含帖子、评论、点赞、关注等业务。
+基于 **FastAPI + SQLAlchemy 2.0 + MySQL 8.0** 的社区论坛后端工程，前后端分离，已实现用户模块（注册 / 登录 / 刷新 token / 退出登录 / 个人资料 / 查看他人主页）、帖子模块（发布 / 修改 / 删除 / 列表）与圈子模块（圈子增删改查 / 圈子分类增删改查），不包含评论、点赞、关注等业务。
 
 ## 技术栈
 
@@ -33,11 +33,10 @@ community/
 │   ├── database.py          # 引擎 / SessionLocal / Base / get_db
 │   ├── dependencies.py      # JWT 依赖，获取当前登录用户
 │   ├── exceptions.py        # 自定义异常 + 全局异常捕获
-│   ├── models/user.py       # User ORM 模型
-│   ├── schemas/             # 请求/响应 schema（user.py、common.py）
-│   ├── crud/crud_user.py     # 纯数据库操作
-│   ├── api/auth.py          # 用户相关接口
-│   ├── api/router.py        # 子路由汇总
+│   ├── models/              # ORM 模型：user.py、topics.py、forum.py、forum_category.py
+│   ├── schemas/             # 请求/响应 schema：user.py、topics.py、forum.py、forum_category.py、common.py
+│   ├── crud/                # 纯数据库操作：crud_user.py、crud_topics.py、crud_forum.py、crud_forum_category.py
+│   ├── api/                 # 接口：auth.py、user.py、topics.py、forum.py、forum_category.py、upload.py、router.py
 │   └── utils/               # jwt_util.py、password_util.py
 └── logs/app.log
 ```
@@ -91,7 +90,7 @@ python -c "import secrets;print(secrets.token_hex(32))"
 ## 四、数据库迁移（Alembic）
 
 ```bash
-# 执行迁移，创建 users 表（仓库已内置初始迁移脚本）
+# 执行迁移，创建 users / topics / forum / forum_category 等表（仓库已内置全部迁移脚本）
 alembic upgrade head
 
 # 查看当前版本 / 历史
@@ -123,24 +122,34 @@ python main.py
 
 统一返回格式：`{"code": int, "msg": str, "data": any}`，成功 `code=200`，参数错误 `400`，未登录 `401`，权限不足 `403`，数据不存在 `404`，服务异常 `500`。
 
-| 方法 | 路径                                 | 是否登录 | 说明                                                  |
-| ---- | ------------------------------------ | -------- | ----------------------------------------------------- |
-| POST | `/api/auth/register`                 | 否       | 注册（username、email、password），用户名/邮箱唯一    |
-| POST | `/api/auth/login`                    | 否       | 登录（username 或 email + password），返回双 token    |
-| POST | `/api/auth/refresh-token`            | 否       | 用 refresh_token 换新 access_token                    |
-| POST | `/api/auth/logout`                   | 是       | 退出登录，注销当前 token（可一并注销 refresh_token）  |
-| GET  | `/api/user/me`                       | 是       | 获取自己的信息                                        |
-| PUT  | `/api/user/me`                       | 是       | 修改自己的 avatar / bio（不可改 username、email）     |
-| GET  | `/api/user/uid/{uid}`                | 是       | 按用户唯一标识 uid 查询用户公开信息                   |
-| GET  | `/api/user/{uid}`                    | 是       | 查看他人主页公开信息                                  |
-| POST | `/api/uploadImage`                   | 是       | 上传图片（form-data 字段名 `file`），返回图片访问地址 |
-| GET  | `/api/forum/allForumList`            | 否       | 查询所有板块（无入参）                                |
-| GET  | `/api/forumCategory/allCategoryList` | 否       | 查询所有板块分类（无入参）                            |
-| GET  | `/health`                            | 否       | 健康检查                                              |
+| 方法 | 路径                                 | 是否登录 | 说明                                                           |
+| ---- | ------------------------------------ | -------- | -------------------------------------------------------------- |
+| POST | `/api/auth/register`                 | 否       | 注册（username、email、password），用户名/邮箱唯一             |
+| POST | `/api/auth/login`                    | 否       | 登录（username 或 email + password），返回双 token             |
+| POST | `/api/auth/refreshToken`             | 否       | 用 refresh_token 换新 access_token                             |
+| POST | `/api/auth/logout`                   | 是       | 退出登录，注销当前 token（可一并注销 refresh_token）           |
+| GET  | `/api/user/me`                       | 是       | 获取自己的信息                                                 |
+| POST | `/api/user/updateUser`               | 是       | 修改自己的 avatar / bio（不可改 username、email）              |
+| GET  | `/api/user/{uid}`                    | 是       | 查看他人主页公开信息                                           |
+| POST | `/api/uploadImage`                   | 是       | 上传图片（form-data 字段名 `file`），返回图片访问地址          |
+| GET  | `/api/topic/list`                    | 否       | 分页查询帖子，可按圈子、作者、关键字、状态筛选                 |
+| POST | `/api/topic/createPost`              | 是       | 发布帖子，自动生成帖子唯一编号 topic_id                        |
+| POST | `/api/topic/update/{topic_id}`       | 是       | 修改自己的帖子（标题、内容、封面）                             |
+| POST | `/api/topic/delete/{topic_id}`       | 是       | 软删除自己的帖子                                               |
+| GET  | `/api/forum/allForumList`            | 否       | 查询所有圈子（无入参）                                         |
+| GET  | `/api/forum/list`                    | 否       | 分页查询圈子，可按名称、作者、关键字、状态、`category_id` 筛选 |
+| POST | `/api/forum/createForum`             | 是       | 创建圈子（`join_type`：public 公开加入 / private 需要申请）    |
+| POST | `/api/forum/update/{forum_id}`       | 是       | 修改自己的圈子                                                 |
+| POST | `/api/forum/delete/{forum_id}`       | 是       | 软删除自己的圈子                                               |
+| GET  | `/api/forumCategory/allCategoryList` | 否       | 查询所有圈子分类（无入参）                                     |
+| POST | `/api/forumCategory/create`          | 是       | 新增圈子分类，名称唯一                                         |
+| POST | `/api/forumCategory/update/{id}`     | 是       | 修改圈子分类名称，同步圈子表的冗余分类名                       |
+| POST | `/api/forumCategory/delete/{id}`     | 是       | 软删除圈子分类，分类下仍有圈子时不允许删除                     |
+| GET  | `/health`                            | 否       | 健康检查                                                       |
 
 鉴权方式：请求头 `Authorization: Bearer <access_token>`。
 
-> 图片上传接口返回结构为 `{"code": int, "msg": str, "data": str}`（注意字段是 `msg`），`data` 为可直接访问的图片地址；图片保存在 `uploads/` 目录下，通过 `/uploads/...` 静态路径访问。
+> 所有接口（含图片上传）统一返回 `{"code": int, "msg": str, "data": any}`；上传接口的 `data` 为可直接访问的图片地址，图片保存在 `uploads/` 目录下，通过 `/uploads/...` 静态路径访问。
 
 > `uid` 是注册时自动生成的 32 位十六进制用户唯一标识（唯一索引 `uk_uid`），对外用它区分用户，避免暴露自增主键 `id`。
 
@@ -210,7 +219,7 @@ curl -X POST "http://127.0.0.1:8000/api/auth/login" \
 ### 3. 刷新 access_token
 
 ```bash
-curl -X POST "http://127.0.0.1:8000/api/auth/refresh-token" \
+curl -X POST "http://127.0.0.1:8000/api/auth/refreshToken" \
   -H "Content-Type: application/json" \
   -d '{"refresh_token":"<登录返回的 refresh_token>"}'
 ```
@@ -248,7 +257,7 @@ curl -X GET "http://127.0.0.1:8000/api/user/me" \
 ### 6. 修改自己的资料
 
 ```bash
-curl -X PUT "http://127.0.0.1:8000/api/user/me" \
+curl -X POST "http://127.0.0.1:8000/api/user/updateUser" \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{"avatar":"https://cdn.example.com/avatar/tom.png","bio":"这个人很懒，什么都没留下"}'
@@ -257,7 +266,7 @@ curl -X PUT "http://127.0.0.1:8000/api/user/me" \
 尝试修改 username（被拒绝，返回参数错误）：
 
 ```bash
-curl -X PUT "http://127.0.0.1:8000/api/user/me" \
+curl -X POST "http://127.0.0.1:8000/api/user/updateUser" \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{"username":"new_name"}'
@@ -283,7 +292,7 @@ curl -X GET "http://127.0.0.1:8000/api/user/2" \
 ### 8. 按 uid 查询用户
 
 ```bash
-curl -X GET "http://127.0.0.1:8000/api/user/uid/9f2c7a1b3d4e5f60718293a4b5c6d7e8" \
+curl -X GET "http://127.0.0.1:8000/api/user/9f2c7a1b3d4e5f60718293a4b5c6d7e8" \
   -H "Authorization: Bearer <access_token>"
 ```
 

@@ -16,8 +16,11 @@ export interface ImageUploadProps {
   disabled?: boolean;
   // 上传按钮名称
   buttonText?: string;
-  // 自定义上传请求
-  customUpload?: (file: File, onSuccess: (url: string) => void) => void;
+  // 自定义上传请求（支持返回 Promise，便于捕获异步上传异常）
+  customUpload?: (
+    file: File,
+    onSuccess: (url: string) => void,
+  ) => void | Promise<void>;
   // 自定义触发按钮
   slotTrigger?: React.ReactNode;
 }

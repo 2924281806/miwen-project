@@ -14,14 +14,14 @@ from app.models.forum import Forum
 
 
 def get_forum_by_id(db: Session, forum_id: int, include_deleted: bool = False) -> Optional[Forum]:
-    """按主键查询版块，默认过滤软删除数据。"""
+    """按主键查询圈子，默认过滤软删除数据。"""
     stmt = select(Forum).where(Forum.id == forum_id)
     if not include_deleted:
         stmt = stmt.where(Forum.deleted_at.is_(None))
     return db.execute(stmt).scalar_one_or_none()
 
 def get_forum_by_forum_id(db: Session, forum_id: int, include_deleted: bool = False) -> Optional[Forum]:
-    """按版块唯一编号 forum_id 查询版块，默认过滤软删除数据。"""
+    """按圈子唯一编号 forum_id 查询圈子，默认过滤软删除数据。"""
     stmt = select(Forum).where(Forum.forum_id == forum_id)
     if not include_deleted:
         stmt = stmt.where(Forum.deleted_at.is_(None))
@@ -41,7 +41,7 @@ def create_forum(
     status: int = 1,
     join_type: str = "public",
 ) -> Forum:
-    """新增版块并返回持久化后的实例。"""
+    """新增圈子并返回持久化后的实例。"""
     forum = Forum(
         forum_id=forum_id,
         uid=uid,
@@ -60,7 +60,7 @@ def create_forum(
 
 
 def update_forum(db: Session, forum: Forum, update_data: dict) -> Forum:
-    """按字段字典更新版块（只更新传入的字段）。"""
+    """按字段字典更新圈子（只更新传入的字段）。"""
     for field, value in update_data.items():
         setattr(forum, field, value)
     db.commit()
@@ -69,7 +69,7 @@ def update_forum(db: Session, forum: Forum, update_data: dict) -> Forum:
 
 
 def soft_delete_forum(db: Session, forum: Forum) -> Forum:
-    """软删除版块：写入 deleted_at。"""
+    """软删除圈子：写入 deleted_at。"""
     forum.deleted_at = datetime.now()
     db.commit()
     db.refresh(forum)
@@ -114,7 +114,7 @@ def list_forums(
     category_id: Optional[int] = None,
     include_deleted: bool = False,
 ) -> List[Forum]:
-    """分页查询版块列表：按创建时间倒序。"""
+    """分页查询圈子列表：按创建时间倒序。"""
     stmt = _apply_filters(
         select(Forum),
         name=name,
@@ -128,7 +128,7 @@ def list_forums(
     return list(db.execute(stmt).scalars().all())
 
 def all_list(db: Session) -> List[Forum]:
-    """查询全部版块：按创建时间倒序，默认过滤软删除数据。"""
+    """查询全部圈子：按创建时间倒序，默认过滤软删除数据。"""
     stmt = _apply_filters(select(Forum))
     stmt = stmt.order_by(Forum.created_at.desc())
     return list(db.execute(stmt).scalars().all())
@@ -143,7 +143,7 @@ def count_forums(
     category_id: Optional[int] = None,
     include_deleted: bool = False,
 ) -> int:
-    """统计满足筛选条件的版块总数（分页用）。"""
+    """统计满足筛选条件的圈子总数（分页用）。"""
     stmt = _apply_filters(
         select(Forum),
         name=name,
@@ -157,7 +157,7 @@ def count_forums(
 
 
 def count_forums_by_category(db: Session, category_id: int) -> int:
-    """统计某分类下的未删除版块数量（用于删除分类前的前置校验）。"""
+    """统计某分类下的未删除圈子数量（用于删除分类前的前置校验）。"""
     stmt = select(func.count()).select_from(Forum).where(
         Forum.category_id == category_id, Forum.deleted_at.is_(None)
     )
@@ -165,7 +165,7 @@ def count_forums_by_category(db: Session, category_id: int) -> int:
 
 
 def update_category_name_by_category_id(db: Session, category_id: int, category_name: str) -> int:
-    """分类改名后同步版块表冗余的 category_name 字段，返回受影响行数。"""
+    """分类改名后同步圈子表冗余的 category_name 字段，返回受影响行数。"""
     stmt = (
         Forum.__table__.update()
         .where(Forum.category_id == category_id)
