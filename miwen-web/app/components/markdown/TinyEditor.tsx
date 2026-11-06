@@ -1,5 +1,4 @@
 "use client";
-import { cleanWordMsoStyle } from "@/app/hooks/cleanWordMsoStyle";
 import { uploadImage } from "@/app/lib/api";
 import type { Editor as TinyMCEEditor } from "@tinymce/tinymce-react";
 import dynamic from "next/dynamic";
@@ -75,7 +74,7 @@ export default function TinyEditor(props: TinyEditorProps) {
       formData.append("file", blobInfo.blob(), blobInfo.filename());
       // 上传图片到服务器
       const res = await uploadImage(formData);
-      if (!res.code) throw new Error(res.message);
+      if (!res.code) throw new Error(res.msg || "上传图片失败");
       return res.data;
     },
     setup(editor: any) {

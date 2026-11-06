@@ -1,7 +1,7 @@
 """
 文件名：app/api/upload.py
 作用：图片上传接口，文件落地到本地 uploads 目录，并通过静态目录对外提供访问。
-说明：返回结构为 {"code", "message", "data"}，data 为可直接访问的图片地址。
+说明：返回结构为 {"code", "msg", "data"}，data 为可直接访问的图片地址。
 """
 
 import logging
@@ -24,20 +24,20 @@ upload_router = APIRouter(tags=["上传"])
 
 
 class UploadImageResponse(BaseModel):
-    """图片上传返回结构：{"code": int, "message": str, "data": str}。"""
+    """图片上传返回结构：{"code": int, "msg": str, "data": str}。"""
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "code": 200,
-                "message": "上传成功",
+                "msg": "上传成功",
                 "data": "http://127.0.0.1:8000/uploads/202611/9f2c7a1b3d4e5f60718293a4b5c6d7e8.png",
             }
         }
     )
 
     code: int = Field(200, description="业务状态码：200 上传成功")
-    message: str = Field("success", description="提示信息")
+    msg: str = Field("success", description="提示信息")
     data: Optional[str] = Field(None, description="图片访问地址，可直接用于 <img src> 或头像字段")
 
 
@@ -107,4 +107,4 @@ def upload_image(
 
     url = f"{str(request.base_url).rstrip('/')}{settings.UPLOAD_URL_PREFIX}/{sub_dir}/{filename}"
     logger.info("图片上传成功 | uid=%s size=%s url=%s", current_user.id, len(content), url)
-    return UploadImageResponse(code=200, message="上传成功", data=url)
+    return UploadImageResponse(code=200, msg="上传成功", data=url)

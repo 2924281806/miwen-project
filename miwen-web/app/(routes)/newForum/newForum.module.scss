@@ -1,0 +1,26 @@
+.forum-container {
+  width: 840px;
+  margin: 0 auto;
+  .forum-center {
+    width: 840px;
+    margin: 10px auto 0px;
+    box-sizing: border-box;
+    padding: 20px;
+    background: rgb(255, 255, 255);
+    position: relative;
+    border-radius: 8px;
+    .forum-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+  }
+  .category-group {
+    .category-group-item {
+      margin-right: 10px;
+      border-radius: 20px !important;
+      width: 100px;
+      text-align: center;
+    }
+  }
+}

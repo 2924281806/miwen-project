@@ -6,9 +6,13 @@
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, field_validator
+
+JOIN_TYPE_PUBLIC = "public"
+JOIN_TYPE_PRIVATE = "private"
+JoinType = Literal["public", "private"]
 
 
 def _check_name(v: str) -> str:
@@ -48,6 +52,7 @@ class ForumCreate(BaseModel):
             "example": {
                 "name": "FastAPI 版块",
                 "description": "一个关于 FastAPI 的版块",
+                "joinType": "public",
             }
         },
     )
@@ -55,6 +60,14 @@ class ForumCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=200, description="版块名称，1-200 字")
     description: str = Field(..., min_length=1, max_length=255, description="版块描述，1-255 字")
     icon: Optional[str] = Field(None, max_length=255, description="版块图标地址，可空")
+    category_id: Optional[int] = Field(
+        None, ge=1, description="所属分类ID，不传则归入默认分类；分类名称由服务端按分类表回填"
+    )
+    joinType: JoinType = Field(
+        JOIN_TYPE_PUBLIC,
+        validation_alias=AliasChoices("join_type", "join_type"),
+        description="加入板块方式：public 公开加入，private 需要申请；不传默认 public",
+    )
 
     @field_validator("name")
     @classmethod
@@ -91,6 +104,9 @@ class ForumUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200, description="版块名称，1-200 字")
     description: Optional[str] = Field(None, min_length=1, max_length=255, description="版块描述，1-255 字")
     icon: Optional[str] = Field(None, max_length=255, description="版块图标地址，可空")
+    category_id: Optional[int] = Field(
+        None, ge=1, description="所属分类ID，修改后分类名称由服务端按分类表同步"
+    )
 
     @field_validator("name")
     @classmethod
@@ -119,9 +135,17 @@ class ForumOut(BaseModel):
     id: int = Field(..., description="版块 ID")
     forum_id: int = Field(..., description="版块唯一编号，对外暴露的编号")
     uid: int = Field(..., description="版块创建用户 ID")
+    category_id: int = Field(..., description="所属分类 ID，对应 forum_category.id")
+    category_name: str = Field(..., description="所属分类名称，对应 forum_category.name")
     name: str = Field(..., description="版块名称")
     description: Optional[str] = Field(None, description="版块描述")
     icon: Optional[str] = Field(None, description="版块图标地址")
     status: int = Field(..., description="是否启用：0关闭，1启用")
+    join_type: str = Field(
+        ...,
+        validation_alias="join_type",
+        serialization_alias="join_type",
+        description="加入板块方式：public 公开加入，private 需要申请",
+    )
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")

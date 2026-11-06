@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 from app.api.auth import auth_router, user_router
 from app.api.forum import forum_router
+from app.api.forum_category import forum_category_router
 from app.api.topics import topic_router
 from app.api.upload import upload_router
 
@@ -15,4 +16,5 @@ api_router.include_router(auth_router)
 api_router.include_router(user_router)
 api_router.include_router(topic_router)
 api_router.include_router(forum_router)
+api_router.include_router(forum_category_router)
 api_router.include_router(upload_router)

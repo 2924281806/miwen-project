@@ -6,13 +6,14 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
 
-from sqlalchemy import DateTime, Index, Integer, String, Text, func, text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text, func, text
 from sqlalchemy.dialects.mysql import BIGINT, TINYINT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 
 if TYPE_CHECKING:  # pragma: no cover
+    from app.models.forum_category import ForumCategory
     from app.models.topics import Topic
 
 class Forum(Base):
@@ -21,6 +22,7 @@ class Forum(Base):
     __table_args__ = (
         Index("uk_forum_id", "forum_id", unique=True),
         Index("idx_uid", "uid"),
+        Index("idx_category_id", "category_id"),
         {
             "mysql_engine": "InnoDB",
             "mysql_charset": "utf8mb4",
@@ -34,6 +36,15 @@ class Forum(Base):
     forum_id: Mapped[int] = mapped_column(
         BIGINT(unsigned=True), nullable=False, comment="版块唯一编号，对外暴露的编号"
     )
+    category_id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True),
+        ForeignKey("forum_category.id", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+        comment="所属分类ID，关联 forum_category.id",
+    )
+    category_name: Mapped[str] = mapped_column(
+        String(100), nullable=False, comment="所属分类名称，与 forum_category.name 保持一致"
+    )
     uid: Mapped[int] = mapped_column(
         BIGINT(unsigned=True), nullable=False, comment="版块创建用户ID"
     )
@@ -42,6 +53,13 @@ class Forum(Base):
     icon: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="版块图标地址")
     status: Mapped[int] = mapped_column(
         TINYINT, nullable=False, default=0, server_default=text("0"), comment="是否启用：0关闭，1启用"
+    )
+    join_type: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="public",
+        server_default=text("'public'"),
+        comment="加入方式：public公开加入，private需要申请",
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now(), comment="创建时间"
@@ -52,6 +70,7 @@ class Forum(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, comment="删除时间")
 
     topics: Mapped[List["Topic"]] = relationship("Topic", back_populates="forum")
+    category: Mapped["ForumCategory"] = relationship("ForumCategory", back_populates="forums")
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Forum id={self.id} forum_id={self.forum_id} name={self.name!r} description={self.description!r}>"

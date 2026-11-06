@@ -99,12 +99,14 @@ export default function Waite() {
       return;
     }
     const res = await createPost({
-      name: title,
-      description: content,
+      title: title,
+      content: content,
+      cover: imageUrl,
       forum_id: forumId,
     });
     if (res?.code === 200) {
       message.success("帖子发布成功！");
+      // 跳转到帖子详情页
     }
   };
 

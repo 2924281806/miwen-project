@@ -58,7 +58,7 @@ export default function Register() {
       };
       const result = await register(params);
       if (result.code !== 200 || !result.data) {
-        setError(result.message || "注册失败");
+        setError(result.msg || "注册失败");
         return;
       }
       setSuccess(true);

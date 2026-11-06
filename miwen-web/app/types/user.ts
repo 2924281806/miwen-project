@@ -36,6 +36,9 @@ export interface LoginInfo {
 
 export interface ApiResult<T = unknown> {
   code: number;
+  /** 统一业务接口的提示字段（/api/auth、/api/forum 等） */
+  msg?: string;
+  /** 上传接口沿用 message 字段（/api/uploadImage） */
   message: string;
   data: T;
 }

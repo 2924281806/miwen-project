@@ -1,9 +1,11 @@
 import type {
-  CreatePostDto,
-  CreatePostDtoParams,
+  CreateForumDto,
+  CreateForumDtoParams,
+  ForumCategoryDto,
   ForumListDto,
   ForumListDtoParams,
 } from "@/app/types/forum";
+import type { CreatePostDto, CreatePostDtoParams } from "@/app/types/topic";
 import type {
   ApiResult,
   LoginDto,
@@ -68,7 +70,7 @@ export const logout = async () => {
 };
 // 上传图片
 export const uploadImage = async (data: FormData) => {
-  const res = await request.post<ApiResult<FormData>>("/api/uploadImage", data);
+  const res = await request.post<ApiResult<string>>("/api/uploadImage", data);
   return res.data;
 };
 
@@ -86,9 +88,25 @@ export const getAllForumList = async () => {
   return res.data;
 };
 
+/** 获取所有板块分类（用于新建板块时选择分类，value 必须是分类真实 id） */
+export const getAllCategoryList = async () => {
+  const res = await request.get<ApiResult<ForumCategoryDto[]>>(
+    "/api/forumCategory/allCategoryList",
+  );
+  return res.data;
+};
+
+export const createForum = async (data: CreateForumDtoParams) => {
+  const res = await request.post<ApiResult<CreateForumDto>>(
+    "/api/forum/createForum",
+    data,
+  );
+  return res.data;
+};
+
 export const createPost = async (data: CreatePostDtoParams) => {
   const res = await request.post<ApiResult<CreatePostDto>>(
-    "/api/forum/createForum",
+    "/api/topic/createPost",
     data,
   );
   return res.data;

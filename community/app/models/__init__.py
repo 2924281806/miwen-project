@@ -6,6 +6,7 @@
 from app.models.topics import Topic  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.models.forum import Forum  # noqa: F401
+from app.models.forum_category import ForumCategory  # noqa: F401
 
 
-__all__ = ["User", "Topic", "Forum"]
+__all__ = ["User", "Topic", "Forum", "ForumCategory"]

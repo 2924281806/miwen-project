@@ -1,0 +1,21 @@
+.upload-container {
+  display: flex;
+  width: 150px;
+  height: 100px;
+  align-items: center;
+  :global(.ant-upload-select) {
+    color: #8491a5;
+    width: 100% !important;
+  }
+  :global(.ant-upload-list-item-container) {
+    height: 100% !important;
+    width: 100% !important;
+  }
+  .upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+  }
+}

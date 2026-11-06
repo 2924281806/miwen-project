@@ -11,11 +11,12 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
 
-from app.crud import crud_forum
+from app.crud import crud_forum, crud_forum_category
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.exceptions import AppException, ForbiddenException, NotFoundException
 from app.models.forum import Forum
+from app.models.forum_category import ForumCategory
 from app.models.user import User
 from app.schemas.common import ApiResponse, PageResult
 from app.schemas.forum import ForumCreate, ForumOut, ForumUpdate
@@ -43,6 +44,19 @@ def _get_own_forum(db: Session, forum_id: int, current_user: User) -> Forum:
     return forum
 
 
+def _resolve_category(db: Session, category_id: Optional[int]) -> ForumCategory:
+    """解析版块所属分类：指定了分类则校验存在，未指定则归入默认分类。"""
+    if category_id is None:
+        category = crud_forum_category.get_default_category(db)
+        if category is None:
+            raise NotFoundException("暂无可用分类，请先创建分类")
+        return category
+    category = crud_forum_category.get_category_by_id(db, category_id)
+    if category is None:
+        raise NotFoundException("分类不存在")
+    return category
+
+
 @forum_router.get(
     "/allForumList",
     response_model=ApiResponse[List[ForumOut]],
@@ -62,7 +76,7 @@ def get_all_forum_list(
     "/list",
     response_model=ApiResponse[PageResult[ForumOut]],
     summary="查询板块列表",
-    description="分页查询板块，按创建时间倒序；可按名称、作者、关键字与状态筛选，默认不返回已删除板块。",
+    description="分页查询板块，按创建时间倒序；可按名称、作者、关键字、状态与所属分类筛选，默认不返回已删除板块。",
 )
 def get_forum_list(
     db: Session = Depends(get_db),
@@ -70,6 +84,7 @@ def get_forum_list(
     uid: Optional[int] = Query(None, ge=1, description="作者用户ID"),
     keyword: Optional[str] = Query(None, description="板块名称或描述关键字"),
     status: Optional[int] = Query(None, ge=0, le=1, description="板块状态：0关闭，1启用"),
+    category_id: Optional[int] = Query(None, ge=1, description="所属分类ID，按分类筛选板块"),
     include_deleted: Optional[bool] = Query(None, description="是否包含已删除板块"),
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
@@ -83,6 +98,7 @@ def get_forum_list(
         uid=uid,
         keyword=keyword,
         status=status,
+        category_id=category_id,
         include_deleted=include_deleted,
     )
     total = crud_forum.count_forums(
@@ -91,6 +107,7 @@ def get_forum_list(
         uid=uid,
         keyword=keyword,
         status=status,
+        category_id=category_id,
         include_deleted=include_deleted,
     )
     data = PageResult[ForumOut].create(
@@ -106,7 +123,7 @@ def get_forum_list(
     "/createForum",
     response_model=ApiResponse[ForumOut],
     summary="创建板块",
-    description="登录用户创建板块，作者自动取当前登录用户。",
+    description="登录用户创建板块，作者自动取当前登录用户；joinType 表示加入方式（public 公开加入，private 需要申请），不传默认 public。",
 )
 def create_forum(
     payload: ForumCreate,
@@ -114,19 +131,25 @@ def create_forum(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[ForumOut]:
     """创建板块。"""
+    category = _resolve_category(db, payload.category_id)
     forum = crud_forum.create_forum(
         db,
         forum_id=_generate_forum_id(db),
         uid=current_user.id,
+        category_id=category.id,
+        category_name=category.name,
         name=payload.name,
         description=payload.description,
         icon=payload.icon,
+        join_type=payload.joinType,
     )
     logger.info(
-        "用户创建板块 | uid=%s forum_id=%s name=%s",
+        "用户创建板块 | uid=%s forum_id=%s category_id=%s name=%s join_type=%s",
         current_user.id,
         forum.id,
+        forum.category_id,
         forum.name,
+        forum.join_type,
     )
     return ApiResponse.ok(ForumOut.model_validate(forum), msg="创建成功")
 
@@ -146,6 +169,10 @@ def update_forum(
     """修改板块。"""
     forum = _get_own_forum(db, forum_id, current_user)
     update_data = payload.model_dump(exclude_unset=True)
+    if "category_id" in update_data:
+        category = _resolve_category(db, update_data["category_id"])
+        update_data["category_id"] = category.id
+        update_data["category_name"] = category.name
     forum = crud_forum.update_forum(db, forum, update_data)
     logger.info(
         "用户修改板块 | uid=%s forum_id=%s fields=%s",

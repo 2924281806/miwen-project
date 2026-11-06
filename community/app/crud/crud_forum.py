@@ -33,13 +33,26 @@ def create_forum(
     *,
     forum_id: int,
     uid: int,
+    category_id: int,
+    category_name: str,
     name: str,
     description: Optional[str] = None,
     icon: Optional[str] = None,
     status: int = 1,
+    join_type: str = "public",
 ) -> Forum:
     """新增版块并返回持久化后的实例。"""
-    forum = Forum(forum_id=forum_id, uid=uid, name=name, description=description, icon=icon, status=status)
+    forum = Forum(
+        forum_id=forum_id,
+        uid=uid,
+        category_id=category_id,
+        category_name=category_name,
+        name=name,
+        description=description,
+        icon=icon,
+        status=status,
+        join_type=join_type,
+    )
     db.add(forum)
     db.commit()
     db.refresh(forum)
@@ -70,6 +83,7 @@ def _apply_filters(
     uid: Optional[int] = None,
     keyword: Optional[str] = None,
     status: Optional[int] = None,
+    category_id: Optional[int] = None,
     include_deleted: Optional[bool] = False,
 ):
     """给查询语句追加列表筛选条件（列表与计数复用，保证口径一致）。"""
@@ -83,6 +97,8 @@ def _apply_filters(
         stmt = stmt.where(Forum.name.like(f"%{keyword}%") | Forum.description.like(f"%{keyword}%"))
     if status is not None:
         stmt = stmt.where(Forum.status == status)
+    if category_id is not None:
+        stmt = stmt.where(Forum.category_id == category_id)
     return stmt
 
 
@@ -95,6 +111,7 @@ def list_forums(
     uid: Optional[int] = None,
     keyword: Optional[str] = None,
     status: Optional[int] = None,
+    category_id: Optional[int] = None,
     include_deleted: bool = False,
 ) -> List[Forum]:
     """分页查询版块列表：按创建时间倒序。"""
@@ -104,6 +121,7 @@ def list_forums(
         uid=uid,
         keyword=keyword,
         status=status,
+        category_id=category_id,
         include_deleted=include_deleted,
     )
     stmt = stmt.order_by(Forum.created_at.desc()).offset(offset).limit(limit)
@@ -122,6 +140,7 @@ def count_forums(
     uid: Optional[int] = None,
     keyword: Optional[str] = None,
     status: Optional[int] = None,
+    category_id: Optional[int] = None,
     include_deleted: bool = False,
 ) -> int:
     """统计满足筛选条件的版块总数（分页用）。"""
@@ -131,6 +150,27 @@ def count_forums(
         uid=uid,
         keyword=keyword,
         status=status,
+        category_id=category_id,
         include_deleted=include_deleted,
     )
     return db.execute(select(func.count()).select_from(stmt.subquery())).scalar_one()
+
+
+def count_forums_by_category(db: Session, category_id: int) -> int:
+    """统计某分类下的未删除版块数量（用于删除分类前的前置校验）。"""
+    stmt = select(func.count()).select_from(Forum).where(
+        Forum.category_id == category_id, Forum.deleted_at.is_(None)
+    )
+    return db.execute(stmt).scalar_one()
+
+
+def update_category_name_by_category_id(db: Session, category_id: int, category_name: str) -> int:
+    """分类改名后同步版块表冗余的 category_name 字段，返回受影响行数。"""
+    stmt = (
+        Forum.__table__.update()
+        .where(Forum.category_id == category_id)
+        .values(category_name=category_name)
+    )
+    result = db.execute(stmt)
+    db.commit()
+    return result.rowcount or 0
