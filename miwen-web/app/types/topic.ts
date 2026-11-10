@@ -24,4 +24,10 @@ export interface CreatePostDto {
   status: number;
   created_at: string;
   updated_at: string;
+  plainText: string;
+  is_votes: number; // 当前用户是否已点赞：0否1是（游客恒为0）
+  votes: number; // 点赞总数
+  is_favorites: number; // 当前用户是否已收藏：0否1是（游客恒为0）
+  favorites: number; // 收藏总数
+  comments: number;
 }

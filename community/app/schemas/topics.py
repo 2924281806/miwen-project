@@ -111,7 +111,7 @@ class TopicOut(BaseModel):
     id: int = Field(..., description="主题ID")
     topic_id: int = Field(..., description="帖子唯一编号，对外暴露的编号")
     forum_id: int = Field(..., description="所属圈子编号，对应 forum.forum_id")
-    uid: int = Field(..., description="发帖用户ID")
+    uid: str = Field(..., description="发帖用户 uid")
     title: str = Field(..., description="帖子标题")
     content: str = Field(..., description="帖子内容")
     cover: Optional[str] = Field(None, description="封面图")
@@ -125,3 +125,9 @@ class TopicOut(BaseModel):
     status: int = Field(..., description="0待审核，1正常，2隐藏")
     created_at: datetime = Field(..., description="发帖时间")
     updated_at: datetime = Field(..., description="更新时间")
+    favorites: int = Field(..., description="收藏数")
+    votes: int = Field(..., description="点赞数")
+    comments: int = Field(..., description="评论数")
+    is_votes: int = Field(0, description="当前用户是否已点赞该帖子：0否1是（未登录恒为0）")
+    is_favorites: int = Field(0, description="当前用户是否已收藏该帖子：0否1是（未登录恒为0）")
+    

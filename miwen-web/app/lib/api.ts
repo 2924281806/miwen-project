@@ -118,3 +118,44 @@ export const createPost = async (data: CreatePostDtoParams) => {
   );
   return res.data;
 };
+export const getPostList = async (params: ForumListDtoParams) => {
+  const res = await request.get<ApiResult<PageResult<CreatePostDto>>>(
+    "/api/topic/list",
+    { params },
+  );
+  return res.data;
+};
+export const getAllPostList = async () => {
+  const res = await request.get<ApiResult<CreatePostDto[]>>("/api/topic/list");
+  return res.data;
+};
+
+export const likeTopic = async (topic_id: number) => {
+  const res = await request.post<ApiResult<CreatePostDto>>(
+    `/api/topic/like/${topic_id}`,
+  );
+  return res.data;
+};
+
+/** 取消点赞帖子（登录用户，每个帖子只能取消点赞一次） */
+export const unlikeTopic = async (topic_id: number) => {
+  const res = await request.post<ApiResult<CreatePostDto>>(
+    `/api/topic/unlike/${topic_id}`,
+  );
+  return res.data;
+};
+
+/** 收藏帖子（登录用户，每个帖子只能收藏一次） */
+export const favoriteTopic = async (topic_id: number) => {
+  const res = await request.post<ApiResult<CreatePostDto>>(
+    `/api/topic/favorite/${topic_id}`,
+  );
+  return res.data;
+};
+
+export const unfavoriteTopic = async (topic_id: number) => {
+  const res = await request.post<ApiResult<CreatePostDto>>(
+    `/api/topic/unfavorite/${topic_id}`,
+  );
+  return res.data;
+};

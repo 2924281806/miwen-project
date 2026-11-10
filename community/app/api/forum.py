@@ -39,7 +39,7 @@ def _get_own_forum(db: Session, forum_id: int, current_user: User) -> Forum:
     forum = crud_forum.get_forum_by_id(db, forum_id)
     if forum is None:
         raise NotFoundException("圈子不存在")
-    if forum.uid != current_user.id:
+    if forum.uid != current_user.uid:
         raise ForbiddenException("只能操作自己发布的圈子")
     return forum
 
@@ -81,7 +81,7 @@ def get_all_forum_list(
 def get_forum_list(
     db: Session = Depends(get_db),
     name: Optional[str] = Query(None, description="圈子名称，模糊匹配"),
-    uid: Optional[int] = Query(None, ge=1, description="作者用户ID"),
+    uid: Optional[str] = Query(None, max_length=32, description="作者用户uid"),
     keyword: Optional[str] = Query(None, description="圈子名称或描述关键字"),
     status: Optional[int] = Query(None, ge=0, le=1, description="圈子状态：0关闭，1启用"),
     category_id: Optional[int] = Query(None, ge=1, description="所属分类ID，按分类筛选圈子"),
@@ -135,7 +135,7 @@ def create_forum(
     forum = crud_forum.create_forum(
         db,
         forum_id=_generate_forum_id(db),
-        uid=current_user.id,
+        uid=current_user.uid,
         category_id=category.id,
         category_name=category.name,
         name=payload.name,

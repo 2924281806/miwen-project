@@ -139,7 +139,7 @@ class ForumOut(BaseModel):
 
     id: int = Field(..., description="圈子 ID")
     forum_id: int = Field(..., description="圈子唯一编号，对外暴露的编号")
-    uid: int = Field(..., description="圈子创建用户 ID")
+    uid: str = Field(..., description="圈子创建用户 uid")
     category_id: int = Field(..., description="所属分类 ID，对应 forum_category.id")
     category_name: str = Field(..., description="所属分类名称，对应 forum_category.name")
     name: str = Field(..., description="圈子名称")

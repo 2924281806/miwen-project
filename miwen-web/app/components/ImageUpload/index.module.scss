@@ -6,8 +6,9 @@
   :global(.ant-upload-select) {
     color: #8491a5;
     width: 100% !important;
+    height: 100px !important;
   }
-  :global(.ant-upload-list-item-container) {
+  :global(.ant-upload-list) {
     height: 100% !important;
     width: 100% !important;
   }

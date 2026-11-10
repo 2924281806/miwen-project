@@ -14,6 +14,7 @@ from app.database import Base
 
 if TYPE_CHECKING:  # pragma: no cover
     from app.models.forum import Forum
+    from app.models.user import User
 
 
 class Topic(Base):
@@ -45,8 +46,11 @@ class Topic(Base):
         nullable=False,
         comment="所属圈子ID，关联 forum.forum_id",
     )
-    uid: Mapped[int] = mapped_column(
-        BIGINT(unsigned=True), nullable=False, comment="发帖用户ID"
+    uid: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("users.uid", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+        comment="发帖用户uid，关联 users.uid",
     )
     title: Mapped[str] = mapped_column(String(200), nullable=False, comment="帖子标题")
     content: Mapped[str] = mapped_column(Text, nullable=False, comment="帖子内容")
@@ -84,6 +88,84 @@ class Topic(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, comment="软删除")
 
     forum: Mapped["Forum"] = relationship("Forum", back_populates="topics")
+    user: Mapped["User"] = relationship("User")
+    favorites: Mapped[int] = mapped_column(
+        TINYINT, nullable=False, default=0, server_default=text("0"), comment="收藏数"
+    )
+    votes: Mapped[int] = mapped_column(
+        TINYINT, nullable=False, default=0, server_default=text("0"), comment="点赞数"
+    )
+    comments: Mapped[int] = mapped_column(
+        TINYINT, nullable=False, default=0, server_default=text("0"), comment="评论数"
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Topic id={self.id} topic_id={self.topic_id} title={self.title!r} forum_id={self.forum_id}>"
+
+
+class TopicVote(Base):
+    """帖子点赞记录表：一个用户对一个帖子最多一条记录，是否存在即代表是否点赞。"""
+
+    __tablename__ = "topic_votes"
+    __table_args__ = (
+        Index("uk_uid_topic", "uid", "topic_id", unique=True),
+        {
+            "mysql_engine": "InnoDB",
+            "mysql_charset": "utf8mb4",
+            "mysql_collate": "utf8mb4_unicode_ci",
+            "comment": "帖子点赞记录表",
+        },
+    )
+
+    id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True), primary_key=True, autoincrement=True, comment="记录ID"
+    )
+    uid: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("users.uid", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+        comment="点赞用户uid，关联 users.uid",
+    )
+    topic_id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True),
+        ForeignKey("topics.topic_id", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+        comment="帖子唯一编号，关联 topics.topic_id",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, server_default=func.now(), comment="点赞时间"
+    )
+
+
+class TopicFavorite(Base):
+    """帖子收藏记录表：一个用户对一个帖子最多一条记录，是否存在即代表是否收藏。"""
+
+    __tablename__ = "topic_favorites"
+    __table_args__ = (
+        Index("uk_uid_topic", "uid", "topic_id", unique=True),
+        {
+            "mysql_engine": "InnoDB",
+            "mysql_charset": "utf8mb4",
+            "mysql_collate": "utf8mb4_unicode_ci",
+            "comment": "帖子收藏记录表",
+        },
+    )
+
+    id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True), primary_key=True, autoincrement=True, comment="记录ID"
+    )
+    uid: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("users.uid", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+        comment="收藏用户uid，关联 users.uid",
+    )
+    topic_id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True),
+        ForeignKey("topics.topic_id", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+        comment="帖子唯一编号，关联 topics.topic_id",
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, server_default=func.now(), comment="收藏时间"
+    )

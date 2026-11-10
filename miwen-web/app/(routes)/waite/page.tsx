@@ -73,7 +73,13 @@ export default function Waite() {
         router.push(`/topics/${res?.data?.topic_id}`);
         clearTimeout(timer ?? undefined);
         timer = null;
+        setTitle("");
+        setContent("");
+        setImgList([]);
+        setForumId(undefined);
       }, 1000);
+    } else {
+      message.error(res?.msg || "帖子发布失败！");
     }
   };
 

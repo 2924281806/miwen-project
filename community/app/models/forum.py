@@ -15,6 +15,7 @@ from app.database import Base
 if TYPE_CHECKING:  # pragma: no cover
     from app.models.forum_category import ForumCategory
     from app.models.topics import Topic
+    from app.models.user import User
 
 class Forum(Base):
     """圈子表。"""
@@ -45,8 +46,11 @@ class Forum(Base):
     category_name: Mapped[str] = mapped_column(
         String(100), nullable=False, comment="所属分类名称，与 forum_category.name 保持一致"
     )
-    uid: Mapped[int] = mapped_column(
-        BIGINT(unsigned=True), nullable=False, comment="圈子创建用户ID"
+    uid: Mapped[str] = mapped_column(
+        String(32),
+        ForeignKey("users.uid", ondelete="RESTRICT", onupdate="CASCADE"),
+        nullable=False,
+        comment="圈子创建用户uid，关联 users.uid",
     )
     name: Mapped[str] = mapped_column(String(200), nullable=False, comment="圈子名称")
     description: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, comment="圈子描述")
@@ -54,6 +58,7 @@ class Forum(Base):
     status: Mapped[int] = mapped_column(
         TINYINT, nullable=False, default=0, server_default=text("0"), comment="是否启用：0关闭，1启用"
     )
+
     join_type: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
@@ -71,6 +76,7 @@ class Forum(Base):
 
     topics: Mapped[List["Topic"]] = relationship("Topic", back_populates="forum")
     category: Mapped["ForumCategory"] = relationship("ForumCategory", back_populates="forums")
+    user: Mapped["User"] = relationship("User")
 
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Forum id={self.id} forum_id={self.forum_id} name={self.name!r} description={self.description!r}>"

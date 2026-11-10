@@ -56,12 +56,12 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   async (config) => {
-    if (whiteList.some((item) => config?.url?.includes(item))) {
-      return config;
-    }
     const token = await getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      return config;
+    }
+    if (whiteList.some((item) => config?.url?.includes(item))) {
       return config;
     }
     return Promise.reject(new Error("无token，取消请求"));

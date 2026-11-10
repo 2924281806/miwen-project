@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from app.crud import crud_forum, crud_topic
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, get_optional_user
 from app.exceptions import AppException, BadRequestException, ForbiddenException, NotFoundException
 from app.models.topics import Topic
 from app.models.user import User
@@ -39,9 +39,20 @@ def _get_own_topic(db: Session, topic_id: int, current_user: User) -> Topic:
     topic = crud_topic.get_topic_by_id(db, topic_id)
     if topic is None:
         raise NotFoundException("帖子不存在")
-    if topic.uid != current_user.id:
+    if topic.uid != current_user.uid:
         raise ForbiddenException("只能操作自己发布的帖子")
     return topic
+
+
+def _topic_out(topic: Topic, current_user: Optional[User] = None, db: Session = None) -> TopicOut:
+    """序列化帖子并填充当前用户的点赞 / 收藏状态（未登录时 is_votes / is_favorites 恒为 0）。"""
+    out = TopicOut.model_validate(topic)
+    if current_user is not None and db is not None:
+        flags = crud_topic.get_user_topic_flags(db, current_user.uid, [topic.topic_id])
+        flag = flags[topic.topic_id]
+        out.is_votes = flag["is_votes"]
+        out.is_favorites = flag["is_favorites"]
+    return out
 
 
 @topic_router.get(
@@ -54,12 +65,13 @@ def list_topics(
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
     forum_id: Optional[int] = Query(None, ge=1, description="按所属圈子筛选"),
-    uid: Optional[int] = Query(None, ge=1, description="按发帖用户筛选"),
+    uid: Optional[str] = Query(None, max_length=32, description="按发帖用户uid筛选"),
     keyword: Optional[str] = Query(None, max_length=200, description="标题关键字，模糊匹配"),
     status: Optional[int] = Query(1, ge=0, le=2, description="状态：0待审核 1正常 2隐藏，不传表示全部"),
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
 ) -> ApiResponse[PageResult[TopicOut]]:
-    """查询帖子列表（游客可访问）。"""
+    """查询帖子列表（游客可访问，登录后附带当前用户的点赞 / 收藏状态）。"""
     offset = (page - 1) * pageSize
     topics = crud_topic.list_topics(
         db,
@@ -77,7 +89,14 @@ def list_topics(
         keyword=keyword,
         status=status,
     )
-    items = [TopicOut.model_validate(topic) for topic in topics]
+    items = [_topic_out(topic, current_user, db) for topic in topics]
+    if current_user is not None:
+        # 批量填充当前用户对这批帖子的点赞 / 收藏状态
+        flags = crud_topic.get_user_topic_flags(db, current_user.uid, [t.topic_id for t in topics])
+        for topic, out in zip(topics, items):
+            flag = flags[topic.topic_id]
+            out.is_votes = flag["is_votes"]
+            out.is_favorites = flag["is_favorites"]
     return ApiResponse.ok(PageResult.create(items, total, page, pageSize=pageSize))
 
 
@@ -103,7 +122,7 @@ def create_topic(
         db,
         topic_id=_generate_topic_id(db),
         forum_id=payload.forum_id,
-        uid=current_user.id,
+        uid=current_user.uid,
         title=payload.title,
         content=payload.content,
         cover=payload.cover,
@@ -139,7 +158,7 @@ def update_topic(
 
     topic = crud_topic.update_topic(db, topic, update_data)
     logger.info("用户修改帖子 | uid=%s topic_id=%s fields=%s", current_user.id, topic.id, list(update_data))
-    return ApiResponse.ok(TopicOut.model_validate(topic), msg="修改成功")
+    return ApiResponse.ok(_topic_out(topic, current_user, db), msg="修改成功")
 
 
 @topic_router.post(
@@ -158,3 +177,88 @@ def delete_topic(
     crud_topic.soft_delete_topic(db, topic)
     logger.info("用户删除帖子 | uid=%s topic_id=%s", current_user.id, topic.id)
     return ApiResponse.ok(None, msg="删除成功")
+
+@topic_router.post(
+    "/like/{topic_id}",
+    response_model=ApiResponse[TopicOut],
+    summary="点赞帖子",
+    description="登录用户点赞帖子（每个用户对同一帖子只能点赞一次），点赞后帖子的 votes 累加，返回中 is_votes 为 1。",
+)
+def like_topic(
+    topic_id: int = Path(..., ge=1, description="帖子编号 topic_id"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[TopicOut]:
+    """点赞帖子。"""
+    topic = crud_topic.get_topic_by_topic_id(db, topic_id)
+    if topic is None:
+        raise NotFoundException("帖子不存在")
+    if crud_topic.has_voted(db, current_user.uid, topic.topic_id):
+        raise BadRequestException("您已点赞该帖子")
+    topic = crud_topic.like_topic(db, topic, current_user.uid)
+    logger.info("用户点赞帖子 | uid=%s topic_id=%s", current_user.uid, topic.topic_id)
+    return ApiResponse.ok(_topic_out(topic, current_user, db), msg="点赞成功")
+
+@topic_router.post(
+    "/unlike/{topic_id}",
+    response_model=ApiResponse[TopicOut],
+    summary="取消点赞帖子",
+    description="登录用户取消点赞帖子（每个用户只能取消点赞一次），取消点赞后帖子的 votes 减少，返回中 is_votes 为 0。",
+)
+def unlike_topic(
+    topic_id: int = Path(..., ge=1, description="帖子编号 topic_id"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[TopicOut]:
+    """取消点赞帖子。"""
+    topic = crud_topic.get_topic_by_topic_id(db, topic_id)
+    if topic is None:
+        raise NotFoundException("帖子不存在")
+    if not crud_topic.has_voted(db, current_user.uid, topic.topic_id):
+        raise BadRequestException("您未点赞该帖子")
+    topic = crud_topic.unlike_topic(db, topic, current_user.uid)
+    logger.info("用户取消点赞帖子 | uid=%s topic_id=%s", current_user.uid, topic.topic_id)
+    return ApiResponse.ok(_topic_out(topic, current_user, db), msg="取消点赞成功")
+
+@topic_router.post(
+    "/favorite/{topic_id}",
+    response_model=ApiResponse[TopicOut],
+    summary="收藏帖子",
+    description="登录用户收藏帖子（每个用户对同一帖子只能收藏一次），收藏后帖子的 favorites 累加，返回中 is_favorites 为 1。",
+)
+def favorite_topic(
+    topic_id: int = Path(..., ge=1, description="帖子编号 topic_id"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[TopicOut]:
+    """收藏帖子。"""
+    topic = crud_topic.get_topic_by_topic_id(db, topic_id)
+    if topic is None:
+        raise NotFoundException("帖子不存在")
+    if crud_topic.has_favorited(db, current_user.uid, topic.topic_id):
+        raise BadRequestException("您已收藏该帖子")
+    topic = crud_topic.favorite_topic(db, topic, current_user.uid)
+    logger.info("用户收藏帖子 | uid=%s topic_id=%s", current_user.uid, topic.topic_id)
+    return ApiResponse.ok(_topic_out(topic, current_user, db), msg="收藏成功") 
+
+@topic_router.post(
+    "/unfavorite/{topic_id}",
+    response_model=ApiResponse[TopicOut],
+    summary="取消收藏帖子",
+    description="登录用户取消收藏帖子（每个用户只能取消收藏一次），取消收藏后帖子的 favorites 减少，返回中 is_favorites 为 0。",
+)
+def unfavorite_topic(
+    topic_id: int = Path(..., ge=1, description="帖子编号 topic_id"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[TopicOut]:
+    """取消收藏帖子。"""
+    topic = crud_topic.get_topic_by_topic_id(db, topic_id)
+    if topic is None:
+        raise NotFoundException("帖子不存在")
+    if not crud_topic.has_favorited(db, current_user.uid, topic.topic_id):
+        raise BadRequestException("您未收藏该帖子")
+    topic = crud_topic.unfavorite_topic(db, topic, current_user.uid)
+    logger.info("用户取消收藏帖子 | uid=%s topic_id=%s", current_user.uid, topic.topic_id)
+    return ApiResponse.ok(_topic_out(topic, current_user, db), msg="取消收藏成功")
+ 

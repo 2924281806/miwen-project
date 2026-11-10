@@ -11,6 +11,9 @@ export interface ForumListDto {
   join_type: "public" | "private";
   created_at: string;
   updated_at: string;
+  favorites: number;
+  votes: number;
+  comments: number;
 }
 
 export interface PageResult<T> {

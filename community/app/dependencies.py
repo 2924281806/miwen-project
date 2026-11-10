@@ -70,6 +70,31 @@ def get_current_user(
     return user
 
 
+def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> Optional[User]:
+    """
+    可选鉴权依赖：未携带 token 返回 None（游客），携带了 token 则必须有效。
+    适用于"游客可看、登录后有增强信息"的接口（如帖子列表的点赞 / 收藏状态）。
+    """
+    if credentials is None or not credentials.credentials:
+        return None
+
+    payload = _parse_payload(credentials.credentials, TOKEN_TYPE_ACCESS)
+    try:
+        uid = int(payload["sub"])
+    except (TypeError, ValueError):
+        raise UnauthorizedException("无效的 token")
+
+    user = crud_user.get_user_by_id(db, uid)
+    if user is None:
+        raise UnauthorizedException("用户不存在或已注销")
+    if user.status == 0:
+        raise ForbiddenException("账号已被禁用")
+    return user
+
+
 def get_user_by_refresh_token(db: Session, refresh_token: str) -> User:
     """
     校验 refresh_token 并返回对应用户（供刷新接口复用，不依赖请求头）。

@@ -10,7 +10,7 @@ from typing import List, Optional
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.models.topics import Topic
+from app.models.topics import Topic, TopicFavorite, TopicVote
 
 
 def get_topic_by_id(db: Session, topic_id: int, include_deleted: bool = False) -> Optional[Topic]:
@@ -34,7 +34,7 @@ def create_topic(
     *,
     topic_id: int,
     forum_id: int,
-    uid: int,
+    uid: str,
     title: str,
     content: str,
     cover: Optional[str] = None,
@@ -75,7 +75,7 @@ def _apply_filters(
     stmt,
     *,
     forum_id: Optional[int] = None,
-    uid: Optional[int] = None,
+    uid: Optional[str] = None,
     keyword: Optional[str] = None,
     status: Optional[int] = None,
     include_deleted: bool = False,
@@ -100,7 +100,7 @@ def list_topics(
     offset: int = 0,
     limit: int = 10,
     forum_id: Optional[int] = None,
-    uid: Optional[int] = None,
+    uid: Optional[str] = None,
     keyword: Optional[str] = None,
     status: Optional[int] = None,
     include_deleted: bool = False,
@@ -126,7 +126,7 @@ def count_topics(
     db: Session,
     *,
     forum_id: Optional[int] = None,
-    uid: Optional[int] = None,
+    uid: Optional[str] = None,
     keyword: Optional[str] = None,
     status: Optional[int] = None,
     include_deleted: bool = False,
@@ -141,3 +141,86 @@ def count_topics(
         include_deleted=include_deleted,
     )
     return db.execute(select(func.count()).select_from(stmt.subquery())).scalar_one()
+
+def has_voted(db: Session, uid: str, topic_id: int) -> bool:
+    """判断用户是否已点赞某帖子（topic_id 为对外暴露的帖子编号）。"""
+    stmt = select(TopicVote.id).where(TopicVote.uid == uid, TopicVote.topic_id == topic_id)
+    return db.execute(stmt).scalar_one_or_none() is not None
+
+
+def has_favorited(db: Session, uid: str, topic_id: int) -> bool:
+    """判断用户是否已收藏某帖子（topic_id 为对外暴露的帖子编号）。"""
+    stmt = select(TopicFavorite.id).where(TopicFavorite.uid == uid, TopicFavorite.topic_id == topic_id)
+    return db.execute(stmt).scalar_one_or_none() is not None
+
+
+def get_user_topic_flags(db: Session, uid: str, topic_ids: List[int]) -> dict:
+    """
+    批量查询用户对一组帖子的点赞 / 收藏状态。
+
+    :param uid: 用户 uid
+    :param topic_ids: 对外暴露的帖子编号列表
+    :return: {topic_id: {"is_votes": 0/1, "is_favorites": 0/1}}，未点赞 / 未收藏默认 0
+    """
+    flags = {tid: {"is_votes": 0, "is_favorites": 0} for tid in topic_ids}
+    if not topic_ids:
+        return flags
+
+    voted_ids = set(
+        db.execute(
+            select(TopicVote.topic_id).where(TopicVote.uid == uid, TopicVote.topic_id.in_(topic_ids))
+        ).scalars().all()
+    )
+    favorited_ids = set(
+        db.execute(
+            select(TopicFavorite.topic_id).where(
+                TopicFavorite.uid == uid, TopicFavorite.topic_id.in_(topic_ids)
+            )
+        ).scalars().all()
+    )
+    for tid in voted_ids:
+        flags[tid]["is_votes"] = 1
+    for tid in favorited_ids:
+        flags[tid]["is_favorites"] = 1
+    return flags
+
+
+def like_topic(db: Session, topic: Topic, uid: str) -> Topic:
+    """点赞帖子：写入点赞记录并累加帖子点赞数。"""
+    db.add(TopicVote(uid=uid, topic_id=topic.topic_id))
+    topic.votes += 1
+    db.commit()
+    db.refresh(topic)
+    return topic
+
+def unlike_topic(db: Session, topic: Topic, uid: str) -> Topic:
+    """取消点赞帖子：删除点赞记录并减少帖子点赞数。"""
+    vote = db.execute(
+        select(TopicVote).where(TopicVote.uid == uid, TopicVote.topic_id == topic.topic_id)
+    ).scalar_one_or_none()
+    if vote is not None:
+        db.delete(vote)
+    topic.votes -= 1
+    db.commit()
+    db.refresh(topic)
+    return topic
+
+def favorite_topic(db: Session, topic: Topic, uid: str) -> Topic:
+    """收藏帖子：写入收藏记录并累加帖子收藏数。"""
+    db.add(TopicFavorite(uid=uid, topic_id=topic.topic_id))
+    topic.favorites += 1
+    db.commit()
+    db.refresh(topic)
+    return topic
+
+def unfavorite_topic(db: Session, topic: Topic, uid: str) -> Topic:
+    """取消收藏帖子：删除收藏记录并减少帖子收藏数。"""
+    favorite = db.execute(
+        select(TopicFavorite).where(TopicFavorite.uid == uid, TopicFavorite.topic_id == topic.topic_id)
+    ).scalar_one_or_none()
+    if favorite is not None:
+        db.delete(favorite)
+    topic.favorites -= 1
+    db.commit()
+    db.refresh(topic)
+    return topic
