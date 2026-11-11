@@ -1,6 +1,7 @@
 "use client";
-
-import { register } from "@/app/lib/api";
+import ImageUpload from "@/app/components/ImageUpload";
+import { register, uploadImage } from "@/app/lib/api";
+import type { ApiResult } from "@/app/types/user";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -23,6 +24,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [avatar, setAvatar] = useState<string[]>([]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,6 +82,15 @@ export default function Register() {
       setLoading(false);
     }
   };
+  const uploadApi = async (file: File, onSuccess: (url: string) => void) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res: ApiResult<string> = await uploadImage(formData);
+    if (res?.code !== 200 || !res?.data) {
+      throw new Error(res?.msg || "上传失败");
+    }
+    onSuccess(res.data);
+  };
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-neutral-100 px-4 dark:bg-neutral-950">
@@ -89,6 +100,23 @@ export default function Register() {
         </h1>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="username"
+              className="text-sm text-neutral-600 dark:text-neutral-400"
+            >
+              头像
+            </label>
+            <ImageUpload
+              value={avatar}
+              onChange={setAvatar}
+              multiple={false}
+              maxCount={1}
+              maxSize={2}
+              customUpload={uploadApi}
+              slotTrigger={<div>添加头像</div>}
+            ></ImageUpload>
+          </div>
           <div className="flex flex-col gap-1">
             <label
               htmlFor="username"

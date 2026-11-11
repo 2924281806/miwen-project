@@ -125,11 +125,14 @@ export const getPostList = async (params: ForumListDtoParams) => {
   );
   return res.data;
 };
+
+// 获取所有帖子（用于新建帖子时选择帖子分类，value 必须是帖子真实 id）
 export const getAllPostList = async () => {
   const res = await request.get<ApiResult<CreatePostDto[]>>("/api/topic/list");
   return res.data;
 };
 
+// 点赞帖子（登录用户，每个帖子只能点赞一次）
 export const likeTopic = async (topic_id: number) => {
   const res = await request.post<ApiResult<CreatePostDto>>(
     `/api/topic/like/${topic_id}`,
@@ -153,9 +156,18 @@ export const favoriteTopic = async (topic_id: number) => {
   return res.data;
 };
 
+// 取消收藏帖子（登录用户，每个帖子只能取消收藏一次）
 export const unfavoriteTopic = async (topic_id: number) => {
   const res = await request.post<ApiResult<CreatePostDto>>(
     `/api/topic/unfavorite/${topic_id}`,
+  );
+  return res.data;
+};
+
+/** 获取帖子详情（登录用户） */
+export const getTopicListDetail = async (topic_id: number) => {
+  const res = await request.get<ApiResult<CreatePostDto>>(
+    `/api/topic/listDetail/${topic_id}`,
   );
   return res.data;
 };

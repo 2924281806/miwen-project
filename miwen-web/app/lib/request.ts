@@ -3,7 +3,7 @@ import type { ApiResult } from "@/app/types/user";
 import { whiteList } from "@/app/utils/whiteList";
 import type { AxiosResponse } from "axios";
 import axios from "axios";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL;
 

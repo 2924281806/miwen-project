@@ -5,7 +5,7 @@ import { createPost, getAllForumList, uploadImage } from "@/app/lib/api";
 import type { ApiResult } from "@/app/types/user";
 import { PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
 import { Button, Input, message, Popover, Select } from "antd";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "./write.module.scss";
 
@@ -13,6 +13,8 @@ const { TextArea } = Input;
 
 export default function Waite() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fid = searchParams.get("fid");
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [imgList, setImgList] = useState<string[]>([]);
@@ -86,6 +88,9 @@ export default function Waite() {
   // ========== Effect ==========
   useEffect(() => {
     const load = async () => {
+      if (fid) {
+        setForumId(Number(fid));
+      }
       await getForum();
     };
     load();

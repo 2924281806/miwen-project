@@ -1,0 +1,248 @@
+.header {
+  min-height: 100vh;
+  min-width: 1032px;
+
+  .breadcrumb {
+    align-items: center;
+    color: #8491a5;
+    display: flex;
+    font-size: 13px;
+    gap: 4px;
+    a {
+      color: #5f6c7f;
+      text-decoration: none;
+      &:hover {
+        color: #1e88e5;
+      }
+      &::after {
+        content: ">";
+        color: #c0c4cc;
+        margin-left: 4px;
+      }
+    }
+    .current {
+      color: #191b1f;
+    }
+  }
+  .content {
+    justify-content: center;
+    width: 100vw;
+    padding: 12px 0;
+    display: flex;
+
+    // ===== 左栏：随页面滚动 =====
+    .main {
+      box-sizing: border-box;
+      flex-shrink: 0;
+      width: 700px;
+      overflow: auto;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      background: #fff;
+
+      .title {
+        color: #333;
+        font-size: 24px;
+        font-weight: 600;
+        line-height: 34px;
+        margin: 0 0 10px;
+      }
+
+      .meta {
+        align-items: center;
+        color: #8491a5;
+        display: flex;
+        font-size: 12px;
+        justify-content: space-between;
+
+        .meta-counts {
+          display: flex;
+          gap: 16px;
+          span {
+            align-items: center;
+            display: inline-flex;
+            :global(.anticon) {
+              margin-right: 4px;
+            }
+          }
+        }
+      }
+
+      .author-bar {
+        align-items: center;
+        border-bottom: 1px solid #f0f1f2;
+        display: flex;
+        padding: 12px 0;
+
+        .author-bar-name {
+          color: #191b1f;
+          font-size: 14px;
+          font-weight: 600;
+          margin-left: 8px;
+        }
+      }
+
+      .body {
+        color: #333;
+        font-size: 15px;
+        line-height: 1.8;
+        margin-top: 16px;
+        word-break: break-word;
+      }
+
+      .actions {
+        align-items: center;
+        justify-content: center;
+        border-top: 1px solid #f0f1f2;
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 16px;
+
+        .action-btn {
+          border-radius: 18px;
+          color: #5f6c7f;
+          &:hover,
+          &:focus {
+            border-color: #1e88e5 !important;
+            color: #1e88e5 !important;
+          }
+          &.actionActive {
+            background: #1e88e5;
+            border-color: #1e88e5 !important;
+            color: #fff !important;
+          }
+        }
+      }
+
+      .comment-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-top: 16px;
+        padding: 12px;
+
+        .comment-input {
+          &:focus-within {
+            border-color: #1e88e5;
+            box-shadow: 0 0 0 2px rgba(0, 181, 173, 0.15);
+          }
+        }
+
+        .reply-btn {
+          background: #1e88e5;
+          border: none;
+          border-radius: 16px;
+          float: right;
+          margin-top: 10px;
+          &:hover,
+          &:focus {
+            background: #1e88e5 !important;
+          }
+        }
+      }
+    }
+
+    // ===== 右栏：固定不随页面滚动 =====
+    .side {
+      align-self: flex-start;
+      flex-grow: 1;
+      height: fit-content;
+      margin-top: 30px;
+      max-width: 250px;
+      min-width: 216px;
+      position: sticky;
+      top: 16px;
+
+      // 作者信息卡片
+      .author-card {
+        background: #fff;
+        border: 1px solid #ebeced;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        box-sizing: border-box;
+        margin-left: 12px;
+        padding: 12px;
+        text-align: center;
+        width: 250px;
+
+        .author-name {
+          align-items: center;
+          color: #191b1f;
+          display: flex;
+          font-size: 16px;
+          font-weight: 600;
+          justify-content: center;
+          margin-top: 12px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+
+          .op-badge {
+            background: #ff7a45;
+            border-radius: 4px;
+            color: #fff;
+            flex-shrink: 0;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 18px;
+            margin-left: 6px;
+            padding: 0 6px;
+          }
+        }
+
+        .author-stats {
+          align-items: center;
+          display: flex;
+          justify-content: center;
+          margin: 18px 0;
+          .stat {
+            box-sizing: border-box;
+            padding: 0 20px;
+            .stat-count {
+              color: #333;
+              font-size: 18px;
+              font-weight: 600;
+              line-height: 1.4;
+            }
+            .stat-label {
+              color: #8491a5;
+              font-size: 12px;
+              margin-top: 2px;
+            }
+          }
+          .stats-divider {
+            background: #ebeced;
+            height: 28px;
+            width: 1px;
+          }
+        }
+
+        .author-actions {
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+          .follow-btn {
+            background: #1e88e5;
+            border: none;
+            flex: 1;
+            &:hover,
+            &:focus {
+              background: #1e88e5 !important;
+            }
+          }
+          .msg-btn {
+            border-color: #1e88e5;
+            color: #1e88e5;
+            flex: 1;
+            &:hover,
+            &:focus {
+              border-color: #1e88e5 !important;
+              color: #1e88e5 !important;
+            }
+          }
+        }
+      }
+    }
+  }
+}

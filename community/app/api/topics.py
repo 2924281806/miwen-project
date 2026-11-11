@@ -11,14 +11,14 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
 
-from app.crud import crud_forum, crud_topic
+from app.crud import crud_forum, crud_topic, crud_user
 from app.database import get_db
 from app.dependencies import get_current_user, get_optional_user
 from app.exceptions import AppException, BadRequestException, ForbiddenException, NotFoundException
 from app.models.topics import Topic
 from app.models.user import User
 from app.schemas.common import ApiResponse, PageResult
-from app.schemas.topics import TopicCreate, TopicOut, TopicUpdate
+from app.schemas.topics import AuthorOut, TopicCreate, TopicOut, TopicUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -262,3 +262,37 @@ def unfavorite_topic(
     logger.info("用户取消收藏帖子 | uid=%s topic_id=%s", current_user.uid, topic.topic_id)
     return ApiResponse.ok(_topic_out(topic, current_user, db), msg="取消收藏成功")
  
+@topic_router.get(
+    "/listDetail/{topic_id}",
+    response_model=ApiResponse[TopicOut],
+    summary="获取帖子详情",
+    description="获取帖子详情",
+)
+def get_topic_list_detail(
+    topic_id: int = Path(..., ge=1, description="帖子编号 topic_id"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[TopicOut]:
+    """获取帖子详情。"""
+    topic = crud_topic.get_topic_by_topic_id(db, topic_id)
+    if topic is None:
+        raise NotFoundException("帖子不存在")
+    print('****************************',current_user.uid)
+    if current_user.uid is None:
+        out = _topic_out(topic, None, db)
+    else:
+        out = _topic_out(topic, current_user, db)
+    # 附加作者信息（头像、昵称、发帖数等），供详情页作者卡片展示
+    author_user = crud_user.get_user_by_uid(db, topic.uid)
+    if author_user is not None:
+        out.author = AuthorOut(
+            uid=author_user.uid,
+            username=author_user.username,
+            nickname=author_user.nickname,
+            avatar=author_user.avatar,
+            level=author_user.level,
+            posts=crud_topic.count_topics_by_uid(db, topic.uid),
+            fans=0,
+        )
+    return ApiResponse.ok(out)
+

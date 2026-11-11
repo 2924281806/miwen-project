@@ -29,6 +29,16 @@ def get_topic_by_topic_id(db: Session, topic_id: int, include_deleted: bool = Fa
     return db.execute(stmt).scalar_one_or_none()
 
 
+def count_topics_by_uid(db: Session, uid: str) -> int:
+    """统计某用户的发帖数（仅正常状态）。"""
+    stmt = (
+        select(func.count())
+        .select_from(Topic)
+        .where(Topic.uid == uid, Topic.status == 1, Topic.deleted_at.is_(None))
+    )
+    return int(db.execute(stmt).scalar() or 0)
+
+
 def create_topic(
     db: Session,
     *,

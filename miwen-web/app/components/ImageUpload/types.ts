@@ -23,4 +23,6 @@ export interface ImageUploadProps {
   ) => void | Promise<void>;
   // 自定义触发按钮
   slotTrigger?: React.ReactNode;
+  // 上传列表类型
+  listType?: "picture-card" | "picture-circle";
 }

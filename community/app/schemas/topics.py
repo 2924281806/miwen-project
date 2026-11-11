@@ -103,6 +103,18 @@ class TopicUpdate(BaseModel):
 
 
 # ==================== 返回 schema ====================
+class AuthorOut(BaseModel):
+    """帖子作者信息（仅帖子详情接口返回）。"""
+
+    uid: str = Field(..., description="作者 uid")
+    username: str = Field(..., description="用户名")
+    nickname: Optional[str] = Field(None, description="昵称")
+    avatar: Optional[str] = Field(None, description="头像地址")
+    level: int = Field(0, description="用户等级")
+    posts: int = Field(0, description="发帖数")
+    fans: int = Field(0, description="粉丝数（关注功能上线前恒为 0）")
+
+
 class TopicOut(BaseModel):
     """帖子完整信息（列表、发帖、改帖均复用）。"""
 
@@ -130,4 +142,5 @@ class TopicOut(BaseModel):
     comments: int = Field(..., description="评论数")
     is_votes: int = Field(0, description="当前用户是否已点赞该帖子：0否1是（未登录恒为0）")
     is_favorites: int = Field(0, description="当前用户是否已收藏该帖子：0否1是（未登录恒为0）")
+    author: Optional[AuthorOut] = Field(None, description="作者信息，仅帖子详情接口返回")
     

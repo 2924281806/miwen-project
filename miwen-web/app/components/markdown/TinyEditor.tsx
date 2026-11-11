@@ -87,7 +87,7 @@ export default function TinyEditor(props: TinyEditorProps) {
     placeholder: "请输入帖子内容",
     plugins: "advlist autolink link image table lists code preview",
     toolbar:
-      "undo redo | blocks | bold italic underline strikethrough | bullist numlist | link image table | code preview clearallformat",
+      "undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright | bullist numlist | link image table | code preview clearallformat",
     content_style:
       "body { font-family:system-ui; font-size:14px; } img { max-width:100%; height:auto; }",
 

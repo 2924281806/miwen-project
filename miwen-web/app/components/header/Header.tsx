@@ -153,7 +153,7 @@ const App = () => {
 
             <div className="flex items-center gap-4">
               <SearchBar />
-              <Link href="/waite" className={styles["btn-primary"]}>
+              <Link href="/topics/waite" className={styles["btn-primary"]}>
                 <PlusOutlined />
                 写作
               </Link>

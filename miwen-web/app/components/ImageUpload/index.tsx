@@ -16,6 +16,7 @@ export default function ImageUpload(props: ImageUploadProps) {
     disabled = false,
     customUpload,
     slotTrigger,
+    listType = "picture-card",
   } = props;
 
   // 上传前校验
@@ -77,7 +78,7 @@ export default function ImageUpload(props: ImageUploadProps) {
   return (
     <Upload
       className={styles["upload-container"]}
-      listType="picture-card"
+      listType={listType}
       fileList={uploadList}
       beforeUpload={beforeUpload}
       onChange={handleChange}

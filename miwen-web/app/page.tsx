@@ -1,5 +1,5 @@
 "use client";
-import { Dompurify } from "@/app/components/Dompurify";
+import { SafeHtml } from "@/app/components/Dompurify";
 import {
   favoriteTopic,
   getPostList,
@@ -13,6 +13,7 @@ import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
 import { message, Typography } from "antd";
 import DOMPurify from "dompurify";
 import { convert } from "html-to-text";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./page.module.scss";
 
@@ -174,7 +175,9 @@ export default function Home() {
             const fav = item.is_favorites === 1;
             return (
               <div key={item.id} className={styles.feedCard}>
-                <h2 className={styles.cardTitle}>{item.title}</h2>
+                <h2 className={styles.cardTitle}>
+                  <Link href={`/topics/${item.topic_id}`}>{item.title}</Link>
+                </h2>
                 <div className={styles.cardBody}>
                   <Typography.Paragraph
                     ellipsis={{
@@ -186,7 +189,7 @@ export default function Home() {
                     }}
                   >
                     {expandMap[item.topic_id] ? (
-                      <Dompurify html={item.content} />
+                      <SafeHtml html={item.content} />
                     ) : (
                       item.plainText
                     )}
@@ -198,11 +201,11 @@ export default function Home() {
                   <div className={styles.voteGroup}>
                     <button
                       type="button"
-                      className={`${styles.voteBtn} ${item.is_votes === 1 ? styles.voteBtnActive : ""}`}
+                      className={`${styles.voteBtn} ${voted ? styles.voteBtnActive : ""}`}
                       onClick={() => toggleVote(item)}
                     >
                       <CaretUpFilled />
-                      {item.is_votes ? "已赞同" : "赞同"} {item.votes}
+                      {voted ? "已赞同" : "赞同"} {item.votes}
                     </button>
                     <button
                       type="button"
