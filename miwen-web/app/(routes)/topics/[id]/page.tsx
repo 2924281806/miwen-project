@@ -23,7 +23,7 @@ import {
   StarOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Avatar, Button, Input, message } from "antd";
+import { Avatar, Button, Empty, Input, message } from "antd";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -123,7 +123,13 @@ export default function TopicDetail() {
 
   const author = topicDetail?.author;
 
-  return loading ? null : (
+  return loading ? (
+    <Empty
+      style={{ height: "100vh" }}
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description="加载中..."
+    />
+  ) : (
     <div className={styles["header"]}>
       <div className={styles["content"]}>
         {/* ===== 左栏：随页面滚动 ===== */}

@@ -1,8 +1,10 @@
 export interface CreatePostDtoParams {
-  title: string;
-  content: string;
-  cover?: string;
-  forum_id: number;
+  forum_id?: number;
+  page: number;
+  pageSize: number;
+  keyword?: string;
+  uid?: number;
+  status?: number;
 }
 
 // 帖子作者信息（仅详情接口返回，对齐后端 AuthorOut）

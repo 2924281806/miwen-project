@@ -77,6 +77,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)) -> ApiRespons
         email=payload.email,
         password_hash=get_password_hash(payload.password),
         nickname=payload.username,
+        avatar=payload.avatar,
     )
     logger.info("用户注册成功 | id=%s uid=%s username=%s", user.id, user.uid, user.username)
     return ApiResponse.ok(UserOut.model_validate(user), msg="注册成功")

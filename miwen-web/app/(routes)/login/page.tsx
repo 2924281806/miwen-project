@@ -3,11 +3,13 @@
 import { login } from "@/app/lib/api";
 import { useUserStore } from "@/app/store/userStore";
 import type { LoginInfo } from "@/app/types/user";
+import { Button, Form, Input } from "antd";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import styles from "../auth.module.scss";
 
 export default function Login() {
   const router = useRouter();
@@ -19,8 +21,6 @@ export default function Login() {
   const setToken = useUserStore((s) => s.setToken);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
     if (!username.trim() || !password) {
       setError("请输入用户名和密码");
       return;
@@ -53,21 +53,24 @@ export default function Login() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-100 px-4 dark:bg-neutral-950">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-md dark:bg-neutral-900">
-        <h1 className="mb-6 text-center text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-          登录
-        </h1>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="username"
-              className="text-sm text-neutral-600 dark:text-neutral-400"
-            >
-              用户名
-            </label>
-            <input
+    <main className={styles.main}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>登录</h1>
+        <Form
+          name="basic"
+          labelCol={{ span: 4 }}
+          wrapperCol={{ span: 20 }}
+          style={{ maxWidth: 600 }}
+          initialValues={{ remember: true }}
+          onFinish={handleSubmit}
+          autoComplete="off"
+        >
+          <Form.Item
+            label="用户名"
+            name="username"
+            rules={[{ required: true, message: "请输入邮箱或用户名!" }]}
+          >
+            <Input
               id="username"
               name="username"
               type="text"
@@ -75,18 +78,16 @@ export default function Login() {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="请输入邮箱或用户名"
               autoComplete="username"
-              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className={styles.input}
             />
-          </div>
+          </Form.Item>
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="password"
-              className="text-sm text-neutral-600 dark:text-neutral-400"
-            >
-              密码
-            </label>
-            <input
+          <Form.Item
+            label="密码"
+            name="password"
+            rules={[{ required: true, message: "请输入用户密码!" }]}
+          >
+            <Input.Password
               id="password"
               name="password"
               type="password"
@@ -94,29 +95,24 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="请输入用户密码"
               autoComplete="current-password"
-              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className={styles.input}
             />
-          </div>
+          </Form.Item>
 
-          {error && (
-            <p role="alert" className="text-sm text-red-500">
-              {error}
-            </p>
-          )}
+          <Form.Item className={styles.submitForm}>
+            {error && (
+              <p role="alert" className={styles.error}>
+                {error}
+              </p>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "登录中..." : "登录"}
-          </button>
-        </form>
+            <Button type="primary" htmlType="submit" className={styles.submit}>
+              {loading ? "登录中..." : "登录"}
+            </Button>
+          </Form.Item>
+        </Form>
 
-        <Link
-          href="/register"
-          className="mt-4 block rounded-lg border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-        >
+        <Link href="/register" className={styles.link}>
           注册新用户
         </Link>
       </div>

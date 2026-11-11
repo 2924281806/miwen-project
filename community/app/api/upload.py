@@ -75,7 +75,6 @@ def _ext_matches(suffix: str, detected: str) -> bool:
 def upload_image(
     request: Request,
     file: UploadFile = File(..., description="图片文件，支持 jpg/jpeg/png/gif/webp/bmp"),
-    current_user: User = Depends(get_current_user),
 ) -> UploadImageResponse:
     """上传图片并返回图片访问地址。"""
     suffix = Path(file.filename or "").suffix.lower().lstrip(".")
@@ -106,5 +105,5 @@ def upload_image(
     (save_dir / filename).write_bytes(content)
 
     url = f"{str(request.base_url).rstrip('/')}{settings.UPLOAD_URL_PREFIX}/{sub_dir}/{filename}"
-    logger.info("图片上传成功 | uid=%s size=%s url=%s", current_user.id, len(content), url)
+    logger.info("图片上传成功 | uid=%s size=%s url=%s", len(content), url)
     return UploadImageResponse(code=200, msg="上传成功", data=url)

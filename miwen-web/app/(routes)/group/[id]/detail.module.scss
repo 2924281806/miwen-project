@@ -17,9 +17,9 @@
       display: flex;
       justify-content: space-between;
       margin: 0 auto;
-      max-width: calc(500px + 50vw);
+      max-width: 1032px;
       padding: 20px;
-      width: calc(500px + 50vw - 48px);
+      width: 1032px;
 
       .info-main {
         flex: 1;
@@ -31,21 +31,19 @@
           flex-wrap: wrap;
 
           .info-name {
-            color: #191b1f;
-            font-size: 20px;
-            font-weight: 600;
-            margin: 0;
+            display: inline-block;
+            font-size: 22px;
+            font-weight: 700;
+            line-height: 32px;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
 
           .join-tag {
-            background: #e3f2fd;
-            border: 1px solid #90caf9;
-            border-radius: 4px;
-            color: #1e88e5;
-            font-size: 12px;
-            line-height: 18px;
-            margin-left: 12px;
-            padding: 0 8px;
+            font-size: 14px;
+            white-space: nowrap;
 
             &.joinTagPrivate {
               background: #fff3e0;
@@ -60,22 +58,16 @@
             display: inline-flex;
             font-size: 13px;
             margin-left: 16px;
-            .anticon {
+            :global(.anticon) {
               color: #1e88e5;
               margin-right: 4px;
             }
-          }
-
-          .forum-code {
-            color: #8491a5;
-            font-size: 13px;
-            margin-left: 16px;
           }
         }
 
         .info-desc {
           display: flex;
-          margin-top: 16px;
+          align-items: center;
 
           .info-avatar {
             background: #1e88e5;

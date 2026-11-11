@@ -1,3 +1,4 @@
+"use client";
 import { getUserState } from "@/app/store/userStore";
 import type { ApiResult } from "@/app/types/user";
 import { whiteList } from "@/app/utils/whiteList";
@@ -85,13 +86,13 @@ request.interceptors.response.use(
       if (!isHandling401) {
         isHandling401 = true;
         // 401 跳转到首页
-        const router = useRouter();
-        router.push("/");
         clearToken();
         clearTimeout(timer ?? undefined);
         timer = setTimeout(() => {
           isHandling401 = false;
         }, 1000);
+        const router = useRouter();
+        router.push("/");
       }
     }
     return Promise.reject(err);

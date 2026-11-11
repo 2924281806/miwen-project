@@ -2,11 +2,13 @@
 import ImageUpload from "@/app/components/ImageUpload";
 import { register, uploadImage } from "@/app/lib/api";
 import type { ApiResult } from "@/app/types/user";
+import { Button, Form, Input } from "antd";
 import axios from "axios";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import styles from "../auth.module.scss";
 
 // 与后端 schema 保持一致：用户名 2-50，密码 6-32，邮箱合法
 const USERNAME_MIN = 2;
@@ -27,8 +29,6 @@ export default function Register() {
   const [avatar, setAvatar] = useState<string[]>([]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
     const name = username.trim();
     const mail = email.trim();
 
@@ -57,6 +57,7 @@ export default function Register() {
         username: name,
         email: mail,
         password,
+        avatar: avatar[0],
       };
       const result = await register(params);
       if (result.code !== 200 || !result.data) {
@@ -93,78 +94,71 @@ export default function Register() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-neutral-100 px-4 dark:bg-neutral-950">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-md dark:bg-neutral-900">
-        <h1 className="mb-6 text-center text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-          注册
-        </h1>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="username"
-              className="text-sm text-neutral-600 dark:text-neutral-400"
-            >
-              头像
-            </label>
+    <main className={styles.main}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>注册</h1>
+        <Form
+          name="basic"
+          labelCol={{ span: 4 }}
+          wrapperCol={{ span: 20 }}
+          style={{ maxWidth: 600 }}
+          initialValues={{ remember: true }}
+          onFinish={handleSubmit}
+          autoComplete="off"
+        >
+          <Form.Item label="头像" name="avatar" className={styles.avatar}>
             <ImageUpload
               value={avatar}
+              listType="picture-circle"
               onChange={setAvatar}
               multiple={false}
               maxCount={1}
               maxSize={2}
               customUpload={uploadApi}
-              slotTrigger={<div>添加头像</div>}
-            ></ImageUpload>
-          </div>
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="username"
-              className="text-sm text-neutral-600 dark:text-neutral-400"
-            >
-              用户名
-            </label>
-            <input
-              id="username"
-              name="username"
+              slotTrigger={<div>选择头像</div>}
+            />
+          </Form.Item>
+          <Form.Item
+            label="用户名"
+            name="username"
+            rules={[{ required: true, message: "请输入用户名!" }]}
+          >
+            <Input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="请输入用户名"
               autoComplete="username"
               maxLength={USERNAME_MAX}
-              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className={styles.input}
             />
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="email"
-              className="text-sm text-neutral-600 dark:text-neutral-400"
-            >
-              邮箱
-            </label>
-            <input
-              id="email"
-              name="email"
+          </Form.Item>
+          <Form.Item
+            label="邮箱"
+            name="email"
+            rules={[{ required: true, message: "请输入邮箱!" }]}
+          >
+            <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="请输入邮箱"
               autoComplete="email"
-              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className={styles.input}
             />
-          </div>
+          </Form.Item>
 
-          <div className="flex flex-col gap-1">
-            <label
-              htmlFor="password"
-              className="text-sm text-neutral-600 dark:text-neutral-400"
-            >
-              密码
-            </label>
-            <input
-              id="password"
+          <Form.Item
+            label="密码"
+            name="password"
+            rules={[
+              {
+                required: true,
+                message: `请输入密码（${PASSWORD_MIN}-${PASSWORD_MAX} 位）!`,
+              },
+            ]}
+          >
+            <Input.Password
               name="password"
               type="password"
               value={password}
@@ -172,38 +166,33 @@ export default function Register() {
               placeholder={`请输入密码（${PASSWORD_MIN}-${PASSWORD_MAX} 位）`}
               autoComplete="new-password"
               maxLength={PASSWORD_MAX}
-              className="rounded-lg border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-blue-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+              className={styles.input}
             />
-          </div>
+          </Form.Item>
 
-          {error && (
-            <p role="alert" className="text-sm text-red-500">
-              {error}
-            </p>
-          )}
+          <Form.Item className={styles.submitForm}>
+            {error && (
+              <p role="alert" className={styles.error}>
+                {error}
+              </p>
+            )}
 
-          {success && (
-            <p
-              role="status"
-              className="text-sm text-green-600 dark:text-green-400"
+            {success && (
+              <p role="status" className={styles.success}>
+                注册成功，请前往登录页登录
+              </p>
+            )}
+            <Button
+              type="primary"
+              htmlType="submit"
+              disabled={loading}
+              className={styles.submit}
             >
-              注册成功，请前往登录页登录
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "注册中..." : "注册"}
-          </button>
-        </form>
-
-        <Link
-          href="/login"
-          className="mt-4 block rounded-lg border border-neutral-300 px-4 py-2 text-center text-sm text-neutral-700 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
-        >
+              {loading ? "注册中..." : "注册"}
+            </Button>
+          </Form.Item>
+        </Form>
+        <Link href="/login" className={styles.link}>
           已有账号，去登录
         </Link>
       </div>

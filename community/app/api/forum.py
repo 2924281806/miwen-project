@@ -199,3 +199,19 @@ def delete_forum(
     crud_forum.soft_delete_forum(db, forum)
     logger.info("用户删除圈子 | uid=%s forum_id=%s", current_user.id, forum.id)
     return ApiResponse.ok(None, msg="删除成功")
+
+@forum_router.get(
+    "/forumDetail/{forum_id}",
+    response_model=ApiResponse[ForumOut],
+    summary="查询圈子详情",
+    description="查询圈子详情（游客可访问）。",
+)
+def get_forum_detail(
+    forum_id: int = Path(..., ge=1, description="圈子ID"),
+    db: Session = Depends(get_db),
+) -> ApiResponse[ForumOut]:
+    """查询圈子详情。"""
+    forum = crud_forum.get_forum_by_forum_id(db, forum_id, include_deleted=False)
+    if not forum:
+        raise HTTPException(status_code=404, detail="圈子不存在")
+    return ApiResponse.ok(ForumOut.model_validate(forum), msg="查询成功")

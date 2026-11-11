@@ -10,6 +10,10 @@
   padding: 0 16px;
   margin: 10px auto;
   gap: 12px;
+  a {
+    color: #333;
+    text-decoration: none;
+  }
 }
 
 /* ---------- 主列：创作入口 + 信息流 ---------- */
@@ -83,9 +87,12 @@
   margin: 0 0 8px;
   cursor: pointer;
   transition: color 0.2s ease;
-
-  &:hover {
-    color: #175199;
+  a {
+    color: #333;
+    text-decoration: none;
+    &:hover {
+      color: #175199;
+    }
   }
 }
 
@@ -174,10 +181,10 @@
 
 /* 已收藏（点亮）状态 */
 .liked {
-  color: #f0a020;
+  color: #06f;
 
   &:hover {
-    color: #f0a020;
+    color: #175199;
   }
 }
 

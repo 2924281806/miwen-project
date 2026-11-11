@@ -1,5 +1,15 @@
+.search-form {
+  position: relative;
+}
+
 .search-icon {
   color: #1677ff;
+  cursor: pointer;
+  font-size: 16px;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .input-search {

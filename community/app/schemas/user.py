@@ -26,7 +26,8 @@ class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="用户名，唯一，仅字母数字下划线")
     email: EmailStr = Field(..., max_length=100, description="邮箱，唯一")
     password: str = Field(..., min_length=6, max_length=72, description="明文密码，6-72 位")
-
+    avatar: Optional[str] = Field(None, max_length=255, description="用户头像，上传后返回的 URL")
+    
     @field_validator("username")
     @classmethod
     def check_username(cls, value: str) -> str:

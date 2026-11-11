@@ -88,21 +88,16 @@ const App = () => {
       <div className={styles["header-container"]}>
         <Header>
           <div className={styles["css-lgijre"]}>
-            <div
-              className={clsx(
-                "flex items-center gap-8 link-items",
-                styles["link-items"],
-              )}
-            >
-              <Link href="/" className="flex items-center gap-2">
+            <div className={styles["link-items"]}>
+              <Link href="/" className={styles["logo-link"]}>
                 <Image src={logo} alt="logo" />
               </Link>
-              <nav className="hidden md:flex items-center gap-6">
+              <nav className={styles["nav"]}>
                 <Link href="/follow">
                   <div
                     className={clsx(
-                      "transition-colors",
-                      pathname === "/follow" && "text-lg font-bold",
+                      styles["nav-link"],
+                      pathname === "/follow" && styles["nav-link-active"],
                     )}
                   >
                     关注
@@ -111,8 +106,8 @@ const App = () => {
                 <Link href="/">
                   <div
                     className={clsx(
-                      "transition-colors",
-                      pathname === "/" && "text-lg font-bold",
+                      styles["nav-link"],
+                      pathname === "/" && styles["nav-link-active"],
                     )}
                   >
                     首页
@@ -121,8 +116,8 @@ const App = () => {
                 <Link href="/recommend">
                   <div
                     className={clsx(
-                      "transition-colors",
-                      pathname === "/recommend" && "text-lg font-bold",
+                      styles["nav-link"],
+                      pathname === "/recommend" && styles["nav-link-active"],
                     )}
                   >
                     推荐
@@ -131,8 +126,8 @@ const App = () => {
                 <Link href="/hot">
                   <div
                     className={clsx(
-                      "transition-colors",
-                      pathname === "/hot" && "text-lg font-bold",
+                      styles["nav-link"],
+                      pathname === "/hot" && styles["nav-link-active"],
                     )}
                   >
                     热榜
@@ -141,8 +136,8 @@ const App = () => {
                 <Link href="/group">
                   <div
                     className={clsx(
-                      "transition-colors",
-                      pathname.startsWith("/group") && "text-lg font-bold",
+                      styles["nav-link"],
+                      pathname.startsWith("/group") && styles["nav-link-active"],
                     )}
                   >
                     圈子
@@ -151,7 +146,7 @@ const App = () => {
               </nav>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className={styles["right-area"]}>
               <SearchBar />
               <Link href="/topics/waite" className={styles["btn-primary"]}>
                 <PlusOutlined />
@@ -159,7 +154,7 @@ const App = () => {
               </Link>
 
               {userInfo ? (
-                <div className="flex items-center gap-3">
+                <div className={styles["user-area"]}>
                   <Popover
                     placement="bottomLeft"
                     trigger="click"
@@ -185,7 +180,7 @@ const App = () => {
                       </div>
                     }
                   >
-                    <div className={clsx(styles["items-center"], "flex gap-2")}>
+                    <div className={styles["items-center"]}>
                       <Avatar
                         src={userInfo.avatar ?? defaultAvatar}
                         size="medium"

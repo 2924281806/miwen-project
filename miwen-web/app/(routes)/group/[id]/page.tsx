@@ -1,6 +1,6 @@
 // 圈子详情页
 "use client";
-import { getAllForumList, getPostList, otherUserInfo } from "@/app/lib/api";
+import { getForumDetail, getPostList, otherUserInfo } from "@/app/lib/api";
 import type { ForumListDto } from "@/app/types/forum";
 import type { CreatePostDto } from "@/app/types/topic";
 import { timeAgo } from "@/app/utils/time";
@@ -13,6 +13,7 @@ import {
   SignalFilled,
   StarOutlined,
   TrophyOutlined,
+  UsergroupAddOutlined,
   UserOutlined,
 } from "@ant-design/icons";
 import { Avatar, Button, Empty, message, Typography } from "antd";
@@ -35,15 +36,16 @@ export default function CircleDetail() {
   const [ownerName, setOwnerName] = useState<string>("");
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [keyword, setKeyword] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const init = async () => {
+      setLoading(true);
       // 圈子信息（从圈子列表中取当前圈子）
-      const forumRes = await getAllForumList();
+      const forumRes = await getForumDetail(forumId);
       if (forumRes?.code === 200) {
-        const current = (forumRes.data || []).find(
-          (f) => f.forum_id === forumId,
-        );
+        setLoading(false);
+        const current = forumRes.data;
         setForum(current || null);
         // 圈主昵称
         if (current?.uid) {
@@ -60,8 +62,13 @@ export default function CircleDetail() {
         }
       }
       // 帖子列表（前端按圈子过滤）
-      const topicRes = await getPostList({ page: 1, pageSize: 50 });
+      const topicRes = await getPostList({
+        forum_id: forumId,
+        page: 1,
+        pageSize: 50,
+      });
       if (topicRes?.code === 200) {
+        setLoading(false);
         const items = (topicRes.data?.items || [])
           .filter((t) => t.forum_id === forumId)
           .map((t) => ({
@@ -95,7 +102,13 @@ export default function CircleDetail() {
   const handleNewPostClick = () => {
     router.push(`/topics/waite?fid=${forumId}`);
   };
-  return (
+  return loading ? (
+    <Empty
+      style={{ height: "100vh" }}
+      image={Empty.PRESENTED_IMAGE_SIMPLE}
+      description="加载中..."
+    />
+  ) : (
     <div className={styles["circle-detail"]}>
       {/* ===== 顶部横幅 + 信息卡 ===== */}
       <div className={styles["banner"]}>
@@ -108,7 +121,7 @@ export default function CircleDetail() {
                   forum?.join_type === "private" ? styles["joinTagPrivate"] : ""
                 }`}
               >
-                {forum?.join_type === "private" ? "私密" : "公开"}
+                {forum?.join_type === "private" ? "【私密圈】" : "【公开圈】"}
               </span>
               <span className={styles["info-stat"]}>
                 <FileTextOutlined /> {topicList.length} 帖子
@@ -116,13 +129,13 @@ export default function CircleDetail() {
               <span className={styles["info-stat"]}>
                 <StarOutlined /> {forum?.favorites ?? 0} 收藏
               </span>
-              <span className={styles["forum-code"]}>
-                RS {forum?.forum_id ?? "-"}
+              <span className={styles["info-stat"]}>
+                <UsergroupAddOutlined /> {forum?.forum_id ?? "-"}
               </span>
             </div>
             <div className={styles["info-desc"]}>
               <Avatar
-                size={56}
+                size={100}
                 className={styles["info-avatar"]}
                 src={forum?.icon || undefined}
                 icon={<SignalFilled />}
@@ -136,22 +149,23 @@ export default function CircleDetail() {
                   <UserOutlined /> {ownerName || "未知"}
                 </p>
               </div>
+
+              <div className={styles["info-actions"]}>
+                <Button
+                  type="primary"
+                  className={styles["join-btn"]}
+                  onClick={() => message.info("申请加入功能开发中，敬请期待")}
+                >
+                  申请加入圈子
+                </Button>
+                <Button
+                  className={styles["invite-btn"]}
+                  onClick={() => message.info("邀请用户功能开发中，敬请期待")}
+                >
+                  邀请用户
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className={styles["info-actions"]}>
-            <Button
-              type="primary"
-              className={styles["join-btn"]}
-              onClick={() => message.info("申请加入功能开发中，敬请期待")}
-            >
-              申请加入圈子
-            </Button>
-            <Button
-              className={styles["invite-btn"]}
-              onClick={() => message.info("邀请用户功能开发中，敬请期待")}
-            >
-              邀请用户
-            </Button>
           </div>
         </div>
       </div>

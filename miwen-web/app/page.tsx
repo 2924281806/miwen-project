@@ -1,5 +1,5 @@
 "use client";
-import { SafeHtml } from "@/app/components/Dompurify";
+import { PlainText, SafeHtml } from "@/app/components/Dompurify";
 import {
   favoriteTopic,
   getPostList,
@@ -11,8 +11,6 @@ import { getUserState } from "@/app/store/userStore";
 import { CreatePostDto } from "@/app/types/topic";
 import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
 import { message, Typography } from "antd";
-import DOMPurify from "dompurify";
-import { convert } from "html-to-text";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./page.module.scss";
@@ -34,12 +32,6 @@ export default function Home() {
         pageSize: 10,
       });
       if (postRes?.code === 200) {
-        postRes?.data?.items.forEach((item) => {
-          const safeHtml = DOMPurify.sanitize(item.content);
-          // 提取纯文本，交给 antd ellipsis 计算打点
-          const plainText = convert(safeHtml, { wordwrap: false });
-          item.plainText = plainText;
-        });
         setPostList(postRes?.data?.items || []);
       }
     };
@@ -191,7 +183,7 @@ export default function Home() {
                     {expandMap[item.topic_id] ? (
                       <SafeHtml html={item.content} />
                     ) : (
-                      item.plainText
+                      PlainText(item.content)
                     )}
                   </Typography.Paragraph>
                 </div>
@@ -247,7 +239,7 @@ export default function Home() {
                     >
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                     </svg>
-                    {item.favorites}
+                    <span>{item.favorites}</span>
                   </button>
                 </div>
               </div>

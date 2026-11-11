@@ -118,7 +118,7 @@ export const createPost = async (data: CreatePostDtoParams) => {
   );
   return res.data;
 };
-export const getPostList = async (params: ForumListDtoParams) => {
+export const getPostList = async (params: CreatePostDtoParams) => {
   const res = await request.get<ApiResult<PageResult<CreatePostDto>>>(
     "/api/topic/list",
     { params },
@@ -168,6 +168,13 @@ export const unfavoriteTopic = async (topic_id: number) => {
 export const getTopicListDetail = async (topic_id: number) => {
   const res = await request.get<ApiResult<CreatePostDto>>(
     `/api/topic/listDetail/${topic_id}`,
+  );
+  return res.data;
+};
+
+export const getForumDetail = async (forum_id: number) => {
+  const res = await request.get<ApiResult<ForumListDto>>(
+    `/api/forum/forumDetail/${forum_id}`,
   );
   return res.data;
 };
