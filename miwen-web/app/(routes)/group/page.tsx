@@ -95,7 +95,7 @@ export default function Group() {
         </span>
         <h1 className={styles.headerTitle}>圈子广场</h1>
         <span className={styles.headerLine} />
-        {userInfo?.uid && (
+        {userInfo?.is_admin === 1 && userInfo?.uid && (
           <Link href="/group/new" className={styles.newLink}>
             + 新建圈子
           </Link>

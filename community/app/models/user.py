@@ -54,7 +54,7 @@ class User(Base):
         DateTime, nullable=False, server_default=func.now(), onupdate=func.now(), comment="更新时间"
     )
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, comment="软删除时间")
-    is_admin: Mapped[bool] = mapped_column(
+    is_admin: Mapped[int] = mapped_column(
         TINYINT, nullable=False, default=0, server_default=text("0"), comment="是否管理员：0否，1是"
     )
     def __repr__(self) -> str:  # pragma: no cover

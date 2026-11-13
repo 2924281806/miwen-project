@@ -114,7 +114,7 @@ class UserOut(BaseModel):
     last_login_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
-    is_admin: bool
+    is_admin: int
 
 
 class UserPublicOut(BaseModel):

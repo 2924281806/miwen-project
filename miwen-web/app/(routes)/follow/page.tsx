@@ -37,7 +37,7 @@ export default function Follow() {
       message.success(res.msg || "关注成功");
       setUserList((prev) =>
         prev.map((item) =>
-          parseInt(item.uid) === uid ? { ...item, is_follow: true } : item,
+          parseInt(item.uid) === uid ? { ...item, is_follow: 1 } : item,
         ),
       );
     } else {
@@ -52,7 +52,7 @@ export default function Follow() {
       message.success(res.msg || "取消关注成功");
       setUserList((prev) =>
         prev.map((item) =>
-          parseInt(item.uid) === uid ? { ...item, is_follow: false } : item,
+          parseInt(item.uid) === uid ? { ...item, is_follow: 0 } : item,
         ),
       );
     } else {

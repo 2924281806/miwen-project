@@ -14,8 +14,10 @@ export interface UserInfo {
   last_login_at?: string | null;
   created_at?: string;
   updated_at?: string;
-  /** 是否关注该用户 */
-  is_follow?: boolean;
+  /** 是否关注该用户：0未关注，1已关注 */
+  is_follow?: number;
+  /** 是否是管理员：0不是，1是 */
+  is_admin?: number;
 }
 
 // 注册入参
