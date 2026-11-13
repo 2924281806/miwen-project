@@ -222,3 +222,17 @@ export const unfollowUser = async (uid: number) => {
   );
   return res.data;
 };
+
+export const joinForum = async (forum_id: number) => {
+  const res = await request.post<ApiResult<ForumListDto>>(
+    `/api/forum/join/${forum_id}`,
+  );
+  return res.data;
+};
+
+export const leaveForum = async (forum_id: number) => {
+  const res = await request.post<ApiResult<ForumListDto>>(
+    `/api/forum/leave/${forum_id}`,
+  );
+  return res.data;
+};

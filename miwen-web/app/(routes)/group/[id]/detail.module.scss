@@ -110,13 +110,19 @@
         margin-left: 24px;
 
         .join-btn {
-          background: #1e88e5;
-          border: none;
+          background: #fff;
+          color: #1e88e5;
           box-shadow: 0 2px 4px rgba(76, 175, 80, 0.35);
           font-weight: 500;
-          &:hover,
-          &:focus {
-            background: #1e88e5 !important;
+          &:hover {
+            border: 1px solid #1e88e5;
+          }
+        }
+        .joined {
+          background: #1e88e5 !important;
+          color: #fff !important;
+          &:hover {
+            border: 1px solid #fff;
           }
         }
 

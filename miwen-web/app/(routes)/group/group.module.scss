@@ -213,23 +213,25 @@
     padding: 5px 14px;
     border-radius: 999px;
     border: none;
-    background: #00b96b;
-    color: #fff;
+    background: #fff;
+    color: #00b96b;
+    border: 1px solid #00b96b;
     font-size: 13px;
     cursor: pointer;
     transition: background 0.2s ease;
 
     &:hover {
       background: #00a160;
+      color: #fff;
     }
   }
 
   .joined {
-    background: #f6f6f6;
-    color: #8590a6;
+    background: #00b96b;
+    color: #fff;
 
     &:hover {
-      background: #ededed;
+      background: #52d46e;
     }
   }
 

@@ -78,5 +78,13 @@ class Forum(Base):
     category: Mapped["ForumCategory"] = relationship("ForumCategory", back_populates="forums")
     user: Mapped["User"] = relationship("User")
 
+    user_counts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0"), comment="圈子用户数量"
+    )
+
+    topic_counts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0"), comment="圈子话题数量"
+    )
+
     def __repr__(self) -> str:  # pragma: no cover
         return f"<Forum id={self.id} forum_id={self.forum_id} name={self.name!r} description={self.description!r}>"

@@ -11,6 +11,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.forum import Forum
+from app.models.forum_member import ForumMember
+from app.models.topics import Topic
 
 
 def get_forum_by_id(db: Session, forum_id: int, include_deleted: bool = False) -> Optional[Forum]:
@@ -174,3 +176,74 @@ def update_category_name_by_category_id(db: Session, category_id: int, category_
     result = db.execute(stmt)
     db.commit()
     return result.rowcount or 0
+
+
+# ==================== 加入圈子相关 ====================
+def get_join_record(db: Session, uid: str, forum_id: int) -> Optional[ForumMember]:
+    """查询一条加入记录（uid 是否加入了 forum_id 圈子）。"""
+    stmt = select(ForumMember).where(
+        ForumMember.uid == uid,
+        ForumMember.forum_id == forum_id,
+    )
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def is_joined(db: Session, uid: str, forum_id: int) -> bool:
+    """判断 uid 是否已加入 forum_id 圈子（记录存在即代表已加入）。"""
+    return get_join_record(db, uid, forum_id) is not None
+
+
+def join_forum(db: Session, *, uid: str, forum_id: int) -> ForumMember:
+    """新增加入记录（唯一索引兜底，业务层已保证不重复加入）。"""
+    record = ForumMember(uid=uid, forum_id=forum_id)
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def leave_forum(db: Session, *, uid: str, forum_id: int) -> bool:
+    """删除加入记录，返回是否删除了记录（未加入时返回 False）。"""
+    record = get_join_record(db, uid, forum_id)
+    if record is None:
+        return False
+    db.delete(record)
+    db.commit()
+    return True
+
+
+def get_user_forum_flags(db: Session, uid: str, forum_ids: List[int]) -> dict:
+    """
+    批量查询用户对一组圈子的加入状态。
+
+    :param uid: 用户 uid
+    :param forum_ids: 对外暴露的圈子编号列表
+    :return: {forum_id: {"is_join": 0/1}}，未加入默认 0
+    """
+    flags = {fid: {"is_join": 0} for fid in forum_ids}
+    if not forum_ids:
+        return flags
+
+    joined_ids = set(
+        db.execute(
+            select(ForumMember.forum_id).where(
+                ForumMember.uid == uid, ForumMember.forum_id.in_(forum_ids)
+            )
+        ).scalars().all()
+    )
+    for fid in joined_ids:
+        flags[fid]["is_join"] = 1
+    return flags
+
+def get_forum_user_counts(db: Session, forum_id: int) -> int:
+    """查询 forum_id 圈子的用户数量。"""
+    stmt = select(func.count()).select_from(ForumMember).where(
+        ForumMember.forum_id == forum_id)
+    return db.execute(stmt).scalar_one()
+
+def get_forum_topic_counts(db: Session, forum_id: int) -> int:
+    """查询 forum_id 圈子的话题数量。"""
+    stmt = select(func.count()).select_from(Topic).where(
+        Topic.forum_id == forum_id
+    )
+    return db.execute(stmt).scalar_one()

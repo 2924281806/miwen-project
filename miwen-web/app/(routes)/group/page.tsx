@@ -1,7 +1,13 @@
 "use client";
-import { getAllCategoryList, getAllForumList } from "@/app/lib/api";
+import {
+  getAllCategoryList,
+  getAllForumList,
+  joinForum,
+  leaveForum,
+} from "@/app/lib/api";
 import { useUserStore } from "@/app/store/userStore";
 import { ForumCategoryDto, ForumListDto } from "@/app/types/forum";
+import { message } from "antd";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./group.module.scss";
@@ -15,7 +21,6 @@ export default function Group() {
   const [categories, setCategories] = useState<ForumCategoryDto[]>([]);
   // null 表示「精选」：展示全部圈子
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
-  const [joinedIds, setJoinedIds] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const userInfo = useUserStore((state) => state.userInfo);
 
@@ -45,16 +50,28 @@ export default function Group() {
   );
 
   /** 加入 / 取消加入（本地状态反馈） */
-  const toggleJoin = (forumId: number) => {
-    setJoinedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(forumId)) {
-        next.delete(forumId);
+  const toggleJoin = async (item: ForumListDto) => {
+    if (item.is_join === 0) {
+      const res = await joinForum(item.forum_id);
+      if (res?.code === 200) {
+        message.success(res?.msg || "加入成功");
+        setForumList((prev) =>
+          prev.map((i) => (i.forum_id === item.forum_id ? res.data : i)),
+        );
       } else {
-        next.add(forumId);
+        message.error(res?.msg || "加入失败");
       }
-      return next;
-    });
+    } else {
+      const res = await leaveForum(item.forum_id);
+      if (res?.code === 200) {
+        message.success(res?.msg || "退出成功");
+        setForumList((prev) =>
+          prev.map((i) => (i.forum_id === item.forum_id ? res.data : i)),
+        );
+      } else {
+        message.error(res?.msg || "退出失败");
+      }
+    }
   };
 
   return (
@@ -119,7 +136,6 @@ export default function Group() {
       ) : (
         <div className={styles.grid}>
           {filteredList.map((item) => {
-            const isJoined = joinedIds.has(item.forum_id);
             return (
               <div key={item.forum_id} className={styles.card}>
                 {item.icon ? (
@@ -149,10 +165,10 @@ export default function Group() {
                     </div>
                     <button
                       type="button"
-                      className={`${styles.joinBtn} ${isJoined ? styles.joined : ""}`}
-                      onClick={() => toggleJoin(item.forum_id)}
+                      className={`${styles.joinBtn} ${item.is_join ? styles.joined : ""}`}
+                      onClick={() => toggleJoin(item)}
                     >
-                      {isJoined ? "已加入" : "+ 加入"}
+                      {item.is_join === 0 ? "+ 加入" : "已加入"}
                     </button>
                   </div>
                   <p className={styles.cardDesc}>

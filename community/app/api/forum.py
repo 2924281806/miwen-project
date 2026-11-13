@@ -13,13 +13,13 @@ from sqlalchemy.orm import Session
 
 from app.crud import crud_forum, crud_forum_category
 from app.database import get_db
-from app.dependencies import get_current_user
-from app.exceptions import AppException, ForbiddenException, NotFoundException
+from app.dependencies import get_current_user, get_optional_user
+from app.exceptions import AppException, BadRequestException, ForbiddenException, NotFoundException
 from app.models.forum import Forum
 from app.models.forum_category import ForumCategory
 from app.models.user import User
 from app.schemas.common import ApiResponse, PageResult
-from app.schemas.forum import ForumCreate, ForumOut, ForumUpdate
+from app.schemas.forum import JOIN_TYPE_PRIVATE, ForumCreate, ForumOut, ForumUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -57,19 +57,32 @@ def _resolve_category(db: Session, category_id: Optional[int]) -> ForumCategory:
     return category
 
 
+def _forum_out(forum: Forum, current_user: Optional[User] = None, db: Session = None) -> ForumOut:
+    """序列化圈子并填充当前用户的加入状态（未登录时 is_join 恒为 0）。"""
+    out = ForumOut.model_validate(forum)
+    out.user_counts = crud_forum.get_forum_user_counts(db, forum.forum_id)
+    out.topic_counts = crud_forum.get_forum_topic_counts(db, forum.forum_id)
+    if current_user is not None and db is not None:
+        flag = crud_forum.get_user_forum_flags(db, current_user.uid, [forum.forum_id])[forum.forum_id]
+        out.is_join = flag["is_join"]
+    return out
+
+
 @forum_router.get(
     "/allForumList",
     response_model=ApiResponse[List[ForumOut]],
     summary="查询所有圈子",
-    description="返回全部未删除圈子，按创建时间倒序，无任何入参，供下拉选择等场景使用。",
+    description="返回全部未删除圈子，按创建时间倒序，无任何入参，供下拉选择等场景使用；"
+                "登录后附带当前用户的加入状态 is_join，未登录恒为 0。",
 )
 def get_all_forum_list(
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
 ) -> ApiResponse[List[ForumOut]]:
-    """查询所有圈子（游客可访问）。"""
+    """查询所有圈子（游客可访问，登录后附带当前用户的加入状态）。"""
     forums = crud_forum.all_list(db)
-    data = [ForumOut.model_validate(item) for item in forums]
-    return ApiResponse.ok(data, msg="查询成功")
+    lists = [_forum_out(forum, current_user, db) for forum in forums]
+    return ApiResponse.ok(lists, msg="查询成功")
 
 
 @forum_router.get(
@@ -88,8 +101,9 @@ def get_forum_list(
     include_deleted: Optional[bool] = Query(None, description="是否包含已删除圈子"),
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
+    current_user: Optional[User] = Depends(get_optional_user),
 ) -> ApiResponse[PageResult[ForumOut]]:
-    """分页查询圈子列表（游客可访问）。"""
+    """分页查询圈子列表（游客可访问，登录后附带当前用户的加入状态）。"""
     forums = crud_forum.list_forums(
         db,
         offset=(page - 1) * pageSize,
@@ -110,8 +124,9 @@ def get_forum_list(
         category_id=category_id,
         include_deleted=include_deleted,
     )
+    lists = [_forum_out(forum, current_user, db) for forum in forums]
     data = PageResult[ForumOut].create(
-        lists=[ForumOut.model_validate(item) for item in forums],
+        lists=lists,
         total=total,
         page=page,
         pageSize=pageSize,
@@ -180,7 +195,7 @@ def update_forum(
         forum.id,
         list(update_data.keys()),
     )
-    return ApiResponse.ok(ForumOut.model_validate(forum), msg="修改成功")
+    return ApiResponse.ok(_forum_out(forum, current_user, db), msg="修改成功")
 
 
 @forum_router.post(
@@ -204,14 +219,66 @@ def delete_forum(
     "/forumDetail/{forum_id}",
     response_model=ApiResponse[ForumOut],
     summary="查询圈子详情",
-    description="查询圈子详情（游客可访问）。",
+    description="查询圈子详情（游客可访问）；登录后附带当前用户的加入状态 is_join，未登录恒为 0。",
 )
 def get_forum_detail(
     forum_id: int = Path(..., ge=1, description="圈子ID"),
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
 ) -> ApiResponse[ForumOut]:
     """查询圈子详情。"""
     forum = crud_forum.get_forum_by_forum_id(db, forum_id, include_deleted=False)
-    if not forum:
-        raise HTTPException(status_code=404, detail="圈子不存在")
-    return ApiResponse.ok(ForumOut.model_validate(forum), msg="查询成功")
+
+    if forum is None:
+        raise NotFoundException("圈子不存在")
+    return ApiResponse.ok(_forum_out(forum, current_user, db), msg="查询成功")
+
+
+@forum_router.post(
+    "/join/{forum_id}",
+    response_model=ApiResponse[ForumOut],
+    summary="加入圈子",
+    description="登录用户加入指定圈子（每个用户对同一圈子只能加入一次），"
+                "公开圈子（join_type=public）可直接加入，私有圈子（join_type=private）暂不支持直接加入；"
+                "加入后返回中 is_join 为 1。",
+)
+def join_forum(
+    forum_id: int = Path(..., ge=1, description="圈子唯一编号"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[ForumOut]:
+    """加入圈子。"""
+    forum = crud_forum.get_forum_by_forum_id(db, forum_id)
+    if forum is None:
+        raise NotFoundException("圈子不存在")
+    if forum.status == 0:
+        raise BadRequestException("圈子已关闭，无法加入")
+    if forum.join_type == JOIN_TYPE_PRIVATE:
+        raise BadRequestException("该圈子需要申请加入，暂不支持直接加入")
+    if crud_forum.is_joined(db, current_user.uid, forum.forum_id):
+        raise BadRequestException("您已加入该圈子")
+    crud_forum.join_forum(db, uid=current_user.uid, forum_id=forum.forum_id)
+    logger.info("用户加入圈子 | uid=%s forum_id=%s", current_user.uid, forum.forum_id)
+    return ApiResponse.ok(_forum_out(forum, current_user, db), msg="加入成功")
+
+
+@forum_router.post(
+    "/leave/{forum_id}",
+    response_model=ApiResponse[ForumOut],
+    summary="退出圈子",
+    description="登录用户退出指定圈子（每个用户只能退出已加入的圈子），退出后返回中 is_join 为 0。",
+)
+def leave_forum(
+    forum_id: int = Path(..., ge=1, description="圈子唯一编号"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[ForumOut]:
+    """退出圈子。"""
+    forum = crud_forum.get_forum_by_forum_id(db, forum_id)
+    if forum is None:
+        raise NotFoundException("圈子不存在")
+    if not crud_forum.leave_forum(db, uid=current_user.uid, forum_id=forum.forum_id):
+        raise BadRequestException("您未加入该圈子")
+
+    logger.info("用户退出圈子 | uid=%s forum_id=%s", current_user.uid, forum.forum_id)
+    return ApiResponse.ok(_forum_out(forum, current_user, db), msg="退出成功")

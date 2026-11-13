@@ -1,6 +1,12 @@
 // 圈子详情页
 "use client";
-import { getForumDetail, getPostList, otherUserInfo } from "@/app/lib/api";
+import {
+  getForumDetail,
+  getPostList,
+  joinForum,
+  leaveForum,
+  otherUserInfo,
+} from "@/app/lib/api";
 import type { ForumListDto } from "@/app/types/forum";
 import type { CreatePostDto } from "@/app/types/topic";
 import { timeAgo } from "@/app/utils/time";
@@ -102,6 +108,27 @@ export default function CircleDetail() {
   const handleNewPostClick = () => {
     router.push(`/topics/write?fid=${forumId}`);
   };
+
+  const toggleJoin = async () => {
+    console.log(forum);
+    if (forum?.is_join === 0) {
+      const res = await joinForum(forumId);
+      if (res?.code === 200) {
+        message.success(res?.msg || "加入成功");
+        setForum((prev) => (prev?.forum_id === forumId ? res.data : prev));
+      } else {
+        message.error(res?.msg || "加入失败");
+      }
+    } else {
+      const res = await leaveForum(forumId);
+      if (res?.code === 200) {
+        message.success(res?.msg || "退出成功");
+        setForum((prev) => (prev?.forum_id === forumId ? res.data : prev));
+      } else {
+        message.error(res?.msg || "退出失败");
+      }
+    }
+  };
   return loading ? (
     <Empty
       style={{ height: "100vh" }}
@@ -124,13 +151,13 @@ export default function CircleDetail() {
                 {forum?.join_type === "private" ? "【私密圈】" : "【公开圈】"}
               </span>
               <span className={styles["info-stat"]}>
-                <FileTextOutlined /> {topicList.length} 帖子
+                <FileTextOutlined /> {forum?.topic_counts ?? "-"} 帖子
               </span>
               <span className={styles["info-stat"]}>
                 <StarOutlined /> {forum?.favorites ?? 0} 收藏
               </span>
               <span className={styles["info-stat"]}>
-                <UsergroupAddOutlined /> {forum?.forum_id ?? "-"}
+                <UsergroupAddOutlined /> {forum?.user_counts ?? "-"} 人
               </span>
             </div>
             <div className={styles["info-desc"]}>
@@ -153,10 +180,10 @@ export default function CircleDetail() {
               <div className={styles["info-actions"]}>
                 <Button
                   type="primary"
-                  className={styles["join-btn"]}
-                  onClick={() => message.info("申请加入功能开发中，敬请期待")}
+                  className={`${styles["join-btn"]} ${forum?.is_join ? styles.joined : ""}`}
+                  onClick={toggleJoin}
                 >
-                  申请加入圈子
+                  {forum?.is_join === 0 ? "申请加入" : "退出圈子"}
                 </Button>
                 <Button
                   className={styles["invite-btn"]}

@@ -14,6 +14,9 @@ export interface ForumListDto {
   favorites: number;
   votes: number;
   comments: number;
+  is_join: number;
+  user_counts: number;
+  topic_counts: number;
 }
 
 export interface PageResult<T> {

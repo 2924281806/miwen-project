@@ -149,3 +149,6 @@ class ForumOut(BaseModel):
     join_type: JoinType = Field(..., description="加入圈子方式：public 公开加入，private 需要申请")
     created_at: datetime = Field(..., description="创建时间")
     updated_at: datetime = Field(..., description="更新时间")
+    is_join: int = Field(0, description="当前登录用户是否已加入该圈子：0未加入，1已加入")
+    user_counts: int = Field(0, description="圈子成员数量")
+    topic_counts: int = Field(0, description="圈子话题数量")

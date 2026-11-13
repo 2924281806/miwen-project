@@ -86,7 +86,7 @@ export default function Follow() {
                   <div className={styles.itemBody}>
                     <div
                       className={styles.itemTitle}
-                      onClick={() => router.push(`/users/${item.uid}`)}
+                      onClick={() => router.push(`/user/${item.uid}`)}
                     >
                       {item.username}
                     </div>
@@ -101,7 +101,7 @@ export default function Follow() {
                       <Button
                         color="primary"
                         variant="outlined"
-                        icon={<PlusOutlined />}
+                        icon={item?.is_follow ? "" : <PlusOutlined />}
                         className={item?.is_follow ? styles.followBtn : ""}
                         onClick={() => {
                           if (item?.is_follow) {
