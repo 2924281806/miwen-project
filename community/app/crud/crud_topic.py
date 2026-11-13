@@ -234,3 +234,13 @@ def unfavorite_topic(db: Session, topic: Topic, uid: str) -> Topic:
     db.commit()
     db.refresh(topic)
     return topic
+
+def get_hot_topics(db: Session, limit: int = 10) -> List[Topic]:
+    """获取热门帖子，点赞数最多的帖子，默认返回 10 条。"""
+    stmt = (
+        select(Topic)
+        .where(Topic.status == 1)
+        .order_by(Topic.votes.desc(), Topic.created_at.desc())
+        .limit(limit)
+    )
+    return list(db.execute(stmt).scalars().all())

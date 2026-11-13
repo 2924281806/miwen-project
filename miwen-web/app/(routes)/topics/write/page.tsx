@@ -11,7 +11,7 @@ import styles from "./write.module.scss";
 
 const { TextArea } = Input;
 
-export default function Waite() {
+export default function Write() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fid = searchParams.get("fid");
@@ -133,7 +133,7 @@ export default function Waite() {
                   onChange={setImgList}
                   multiple={false}
                   maxCount={1}
-                  maxSize={2}
+                  maxSize={5}
                   customUpload={uploadApi}
                   slotTrigger={
                     <div>

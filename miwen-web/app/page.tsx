@@ -1,26 +1,29 @@
 "use client";
 import { PlainText, SafeHtml } from "@/app/components/Dompurify";
+import SiderRight from "@/app/components/SiderRight";
 import {
   favoriteTopic,
+  getHotPostImageList,
   getPostList,
   likeTopic,
   unfavoriteTopic,
   unlikeTopic,
 } from "@/app/lib/api";
 import { getUserState } from "@/app/store/userStore";
-import { CreatePostDto } from "@/app/types/topic";
+import { CreatePostDto, HotTopicsImageOut } from "@/app/types/topic";
 import { CaretDownFilled, CaretUpFilled } from "@ant-design/icons";
-import { message, Typography } from "antd";
+import { Carousel, message, Typography } from "antd";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import styles from "./page.module.scss";
 
-/** 根据标签返回样式类名 */
-const tagClass = (tag: string) => {
-  if (tag === "热") return styles.tagHot;
-  if (tag === "新") return styles.tagNew;
-  if (tag === "活") return styles.tagLive;
-  return "";
+const contentStyle: React.CSSProperties = {
+  margin: "0 auto",
+  height: "160px",
+  color: "#fff",
+  lineHeight: "160px",
+  textAlign: "center",
+  background: "#364d79",
 };
 
 // 首页
@@ -32,7 +35,12 @@ export default function Home() {
         pageSize: 10,
       });
       if (postRes?.code === 200) {
-        setPostList(postRes?.data?.items || []);
+        setPostList(postRes?.data?.lists || []);
+      }
+
+      const hotPostImageList = await getHotPostImageList();
+      if (hotPostImageList?.code === 200) {
+        setHotPostImageList(hotPostImageList?.data || []);
       }
     };
     init();
@@ -42,7 +50,9 @@ export default function Home() {
   // 热搜轮换页码
   const [searchPage, setSearchPage] = useState(1);
   const [postList, setPostList] = useState<CreatePostDto[]>([]);
-  const [allPostList, setAllPostList] = useState<CreatePostDto[]>([]);
+  const [hotPostImageList, setHotPostImageList] = useState<HotTopicsImageOut[]>(
+    [],
+  );
 
   /** 点赞：游客提示登录；已点赞不重复请求；成功后用服务端数据更新总数与状态 */
   const toggleVote = async (item: CreatePostDto) => {
@@ -154,13 +164,25 @@ export default function Home() {
   const toggleExpand = (id: number) => {
     setExpandMap((prev) => ({ ...prev, [id]: !prev[id] }));
   };
-  const handleRefresh = () => {};
 
   return (
     <div className="container">
       <div className={styles["content-home"]}>
         {/* 主列：创作入口 + 信息流 */}
         <div className={styles["main-column"]}>
+          <div className={styles.carouselContainer}>
+            <Carousel arrows autoplay>
+              {hotPostImageList.map((item) => (
+                <div key={item.id}>
+                  <img
+                    style={contentStyle}
+                    src={item.img_url}
+                    alt={item.img_url}
+                  />
+                </div>
+              ))}
+            </Carousel>
+          </div>
           {/* 信息流卡片 */}
           {postList.map((item) => {
             const voted = item.is_votes === 1;
@@ -246,65 +268,8 @@ export default function Home() {
             );
           })}
         </div>
-
         {/* 右侧栏 */}
-        <div className={styles["sider-right"]}>
-          {/* 大家都在搜 */}
-          <div className={styles.sideCard}>
-            <div className={styles.sideHead}>
-              <span className={styles.sideTitle}>大家都在搜</span>
-              <button
-                type="button"
-                className={styles.refreshBtn}
-                onClick={handleRefresh}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="13"
-                  height="13"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="23 4 23 10 17 10" />
-                  <polyline points="1 20 1 14 7 14" />
-                  <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-                </svg>
-                换一换
-              </button>
-            </div>
-            {allPostList.map((item) => (
-              <div key={item.id} className={styles.searchItem}>
-                <span className={styles.dot} />
-                <span className={styles.keyword}>{item.title}</span>
-                <span className={styles.hotness}>{item.favorites}热度</span>
-                {item.favorites > 0 && (
-                  <span
-                    className={`${styles.tag} ${tagClass(String(item.favorites))}`}
-                  >
-                    {item.favorites}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* 作者平台推广卡片 */}
-          <div className={styles.promoCard}>
-            <div className={styles.promoHead}>
-              <span className={styles.badge}>¥</span>
-              <span className={styles.promoTitle}>觅文作者平台</span>
-            </div>
-            <p className={styles.promoDesc}>
-              写好故事，赚高收益！签约作者保底分成，新手扶持流量包，即刻开启你的创作之旅。
-            </p>
-            <button type="button" className={styles.promoBtn}>
-              加入我们
-            </button>
-          </div>
-        </div>
+        <SiderRight />
       </div>
     </div>
   );

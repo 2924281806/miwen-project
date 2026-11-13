@@ -1,0 +1,112 @@
+/* 首页样式：参照截图（浅灰底 + 白卡片双栏信息流 + 蓝色赞同主色） */
+
+.content-home {
+  box-sizing: border-box;
+  min-width: 0;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  width: 1032px;
+  padding: 0 16px;
+  margin: 10px auto;
+  gap: 12px;
+  a {
+    color: #333;
+    text-decoration: none;
+  }
+}
+
+/* ---------- 主列：创作入口 + 信息流 ---------- */
+.main-column {
+  flex: 1;
+  width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ---------- 热榜列表：分割线式排行列表 ---------- */
+
+.hotItem {
+  border: 1px solid #f0f1f2;
+  border-radius: 4px;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  padding: 16px;
+  transition:
+    box-shadow 0.2s,
+    transform 0.2s;
+  display: flex;
+  background: #fff;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(18, 18, 18, 0.1);
+  }
+}
+
+/* 序号列：橙色粗体排名 + 「新」标签 */
+.rankCol {
+  width: 28px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.rankNum {
+  font-size: 20px;
+  font-weight: 700;
+  color: #9196a1;
+  line-height: 1.2;
+}
+
+.hotList .hotItem:nth-child(1) {
+  .rankNum {
+    color: #ff501a;
+  }
+}
+.hotList .hotItem:nth-child(2) {
+  .rankNum {
+    color: #f77932;
+  }
+}
+.hotList .hotItem:nth-child(3) {
+  .rankNum {
+    color: #fa9d14;
+  }
+}
+
+/* 内容区 */
+.itemBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.itemTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.itemSummary {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+}
+
+/* 右侧缩略图 */
+.itemThumb {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+}

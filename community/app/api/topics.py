@@ -89,15 +89,15 @@ def list_topics(
         keyword=keyword,
         status=status,
     )
-    items = [_topic_out(topic, current_user, db) for topic in topics]
+    lists = [_topic_out(topic, current_user, db) for topic in topics]
     if current_user is not None:
         # 批量填充当前用户对这批帖子的点赞 / 收藏状态
         flags = crud_topic.get_user_topic_flags(db, current_user.uid, [t.topic_id for t in topics])
-        for topic, out in zip(topics, items):
+        for topic, out in zip(topics, lists):
             flag = flags[topic.topic_id]
             out.is_votes = flag["is_votes"]
             out.is_favorites = flag["is_favorites"]
-    return ApiResponse.ok(PageResult.create(items, total, page, pageSize=pageSize))
+    return ApiResponse.ok(PageResult.create(lists, total, page, pageSize=pageSize))
 
 
 @topic_router.post(

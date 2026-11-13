@@ -6,7 +6,12 @@ import type {
   ForumListDtoParams,
   PageResult,
 } from "@/app/types/forum";
-import type { CreatePostDto, CreatePostDtoParams } from "@/app/types/topic";
+import type {
+  CreatePostDto,
+  CreatePostParams,
+  GetPostParams,
+  HotTopicsImageOut,
+} from "@/app/types/topic";
 import type {
   ApiResult,
   LoginDto,
@@ -111,14 +116,14 @@ export const createForum = async (data: CreateForumDtoParams) => {
   return res.data;
 };
 
-export const createPost = async (data: CreatePostDtoParams) => {
+export const createPost = async (data: CreatePostParams) => {
   const res = await request.post<ApiResult<CreatePostDto>>(
     "/api/topic/createPost",
     data,
   );
   return res.data;
 };
-export const getPostList = async (params: CreatePostDtoParams) => {
+export const getPostList = async (params: GetPostParams) => {
   const res = await request.get<ApiResult<PageResult<CreatePostDto>>>(
     "/api/topic/list",
     { params },
@@ -175,6 +180,31 @@ export const getTopicListDetail = async (topic_id: number) => {
 export const getForumDetail = async (forum_id: number) => {
   const res = await request.get<ApiResult<ForumListDto>>(
     `/api/forum/forumDetail/${forum_id}`,
+  );
+  return res.data;
+};
+
+export const getHotPostList = async () => {
+  const res = await request.get<ApiResult<CreatePostDto[]>>("/api/common/hot");
+  return res.data;
+};
+
+export const getHotPostImages = async () => {
+  const res = await request.get<ApiResult<string[]>>("/api/common/hot/images");
+  return res.data;
+};
+
+export const getHotPostImageList = async () => {
+  const res = await request.get<ApiResult<HotTopicsImageOut[]>>(
+    "/api/hotTopicsImage/hotImageList",
+  );
+  return res.data;
+};
+
+// 获取所有用户（登录用户）
+export const getAllUserList = async () => {
+  const res = await request.get<ApiResult<PageResult<UserInfo>>>(
+    "/api/common/userList",
   );
   return res.data;
 };

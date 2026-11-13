@@ -31,6 +31,5 @@ export function PlainText(html: string) {
     wordwrap: false,
     preserveNewlines: true,
   });
-  console.log(plainText);
   return plainText;
 }

@@ -111,7 +111,7 @@ def get_forum_list(
         include_deleted=include_deleted,
     )
     data = PageResult[ForumOut].create(
-        items=[ForumOut.model_validate(item) for item in forums],
+        lists=[ForumOut.model_validate(item) for item in forums],
         total=total,
         page=page,
         pageSize=pageSize,

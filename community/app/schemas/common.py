@@ -51,17 +51,17 @@ class PageParams(BaseModel):
 class PageResult(BaseModel, Generic[DataT]):
     """分页返回结构（预留，后续列表接口复用）。"""
 
-    items: List[DataT] = Field(default_factory=list, description="当前页数据")
+    lists: List[DataT] = Field(default_factory=list, description="当前页数据")
     total: int = Field(0, description="总记录数")
     page: int = Field(1, description="当前页码")
     pageSize: int = Field(10, description="每页条数")
     pages: int = Field(0, description="总页数")
 
     @classmethod
-    def create(cls, items: List[DataT], total: int, page: int, pageSize: int) -> "PageResult[DataT]":
+    def create(cls, lists: List[DataT], total: int, page: int, pageSize: int) -> "PageResult[DataT]":
         """根据查询结果构造分页对象，自动计算总页数。"""
         return cls(
-            items=items,
+            lists=lists,
             total=total,
             page=page,
             pageSize=pageSize,

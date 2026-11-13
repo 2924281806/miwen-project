@@ -113,16 +113,6 @@ const App = () => {
                     首页
                   </div>
                 </Link>
-                <Link href="/recommend">
-                  <div
-                    className={clsx(
-                      styles["nav-link"],
-                      pathname === "/recommend" && styles["nav-link-active"],
-                    )}
-                  >
-                    推荐
-                  </div>
-                </Link>
                 <Link href="/hot">
                   <div
                     className={clsx(
@@ -137,7 +127,8 @@ const App = () => {
                   <div
                     className={clsx(
                       styles["nav-link"],
-                      pathname.startsWith("/group") && styles["nav-link-active"],
+                      pathname.startsWith("/group") &&
+                        styles["nav-link-active"],
                     )}
                   >
                     圈子
@@ -148,7 +139,7 @@ const App = () => {
 
             <div className={styles["right-area"]}>
               <SearchBar />
-              <Link href="/topics/waite" className={styles["btn-primary"]}>
+              <Link href="/topics/write" className={styles["btn-primary"]}>
                 <PlusOutlined />
                 写作
               </Link>

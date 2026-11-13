@@ -17,7 +17,7 @@ export interface ForumListDto {
 }
 
 export interface PageResult<T> {
-  items: T[];
+  lists: T[];
   total: number;
   page: number;
   pageSize: number;

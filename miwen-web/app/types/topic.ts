@@ -1,10 +1,16 @@
-export interface CreatePostDtoParams {
+export interface GetPostParams {
   forum_id?: number;
   page: number;
   pageSize: number;
   keyword?: string;
   uid?: number;
   status?: number;
+}
+export interface CreatePostParams {
+  forum_id?: number;
+  title: string;
+  content: string;
+  cover?: string | null;
 }
 
 // 帖子作者信息（仅详情接口返回，对齐后端 AuthorOut）
@@ -44,4 +50,12 @@ export interface CreatePostDto {
   favorites: number; // 收藏总数
   comments: number;
   author: AuthorDto | null; // 作者信息，仅详情接口返回
+  tag?: string; // 标签
+}
+
+export interface HotTopicsImageOut {
+  id: number;
+  img_url: string;
+  created_at: string;
+  deleted_at: string | null;
 }

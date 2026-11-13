@@ -69,7 +69,7 @@ export default function CircleDetail() {
       });
       if (topicRes?.code === 200) {
         setLoading(false);
-        const items = (topicRes.data?.items || [])
+        const lists = (topicRes.data?.lists || [])
           .filter((t) => t.forum_id === forumId)
           .map((t) => ({
             ...t,
@@ -78,7 +78,7 @@ export default function CircleDetail() {
               selectors: [{ selector: "img", format: "skip" }],
             }),
           }));
-        setTopicList(items);
+        setTopicList(lists);
       }
     };
     init();
@@ -100,7 +100,7 @@ export default function CircleDetail() {
     0,
   );
   const handleNewPostClick = () => {
-    router.push(`/topics/waite?fid=${forumId}`);
+    router.push(`/topics/write?fid=${forumId}`);
   };
   return loading ? (
     <Empty
