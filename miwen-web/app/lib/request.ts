@@ -1,7 +1,6 @@
 "use client";
 import { getUserState } from "@/app/store/userStore";
 import type { ApiResult } from "@/app/types/user";
-import { whiteList } from "@/app/utils/whiteList";
 import type { AxiosResponse } from "axios";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -60,12 +59,8 @@ request.interceptors.request.use(
     const token = await getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      return config;
     }
-    if (whiteList.some((item) => config?.url?.includes(item))) {
-      return config;
-    }
-    return Promise.reject(new Error("无token，取消请求"));
+    return config;
   },
   (err) => Promise.reject(err),
 );
@@ -77,12 +72,8 @@ request.interceptors.response.use(
   },
   async (err) => {
     const response = err.response;
-    const url = response?.config?.url ?? "";
 
-    if (
-      response?.status === 401 &&
-      !whiteList.some((item) => url.includes(item))
-    ) {
+    if (response?.status === 401) {
       if (!isHandling401) {
         isHandling401 = true;
         // 401 跳转到首页

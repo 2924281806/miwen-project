@@ -14,6 +14,8 @@ export interface UserInfo {
   last_login_at?: string | null;
   created_at?: string;
   updated_at?: string;
+  /** 是否关注该用户 */
+  is_follow?: boolean;
 }
 
 // 注册入参

@@ -101,7 +101,7 @@ alembic history --verbose
 alembic downgrade -1
 
 # 修改模型后生成新的迁移脚本
-alembic revision --autogenerate -m "add xxx column"
+alembic revision --autogenerate -m "add is_admin column to users table"
 ```
 
 ## 五、启动服务

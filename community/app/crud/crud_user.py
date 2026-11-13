@@ -11,11 +11,12 @@ from sqlalchemy import Integer, cast, func, select
 from sqlalchemy.orm import Session
 
 from app.models.user import User
+from app.models.user_follow import UserFollow
 
 
 def get_user_by_id(db: Session, uid: int, include_deleted: bool = False) -> Optional[User]:
     """按主键查询用户，默认过滤软删除数据。"""
-    stmt = select(User).where(User.id == uid)
+    stmt = select(User).where(User.uid == uid)
     if not include_deleted:
         stmt = stmt.where(User.deleted_at.is_(None))
     return db.execute(stmt).scalar_one_or_none()
@@ -112,7 +113,7 @@ def update_last_login(db: Session, user: User, login_at: Optional[datetime] = No
 
 def count_users(db: Session, include_deleted: bool = False) -> int:
     """统计用户总数（分页预留）。"""
-    stmt = select(func.count(User.id))
+    stmt = select(func.count(User.uid))
     if not include_deleted:
         stmt = stmt.where(User.deleted_at.is_(None))
     return db.execute(stmt).scalar_one()
@@ -120,7 +121,7 @@ def count_users(db: Session, include_deleted: bool = False) -> int:
 
 def list_users(db: Session, offset: int = 0, limit: int = 10, include_deleted: bool = False) -> List[User]:
     """分页查询用户列表（分页预留，按注册时间倒序）。"""
-    stmt = select(User).order_by(User.id.desc()).offset(offset).limit(limit)
+    stmt = select(User).order_by(User.created_at.desc()).offset(offset).limit(limit)
     if not include_deleted:
         stmt = stmt.where(User.deleted_at.is_(None))
     return list(db.execute(stmt).scalars().all())
@@ -132,3 +133,37 @@ def soft_delete_user(db: Session, user: User) -> User:
     db.commit()
     db.refresh(user)
     return user
+
+
+# ==================== 关注相关 ====================
+def get_follow_record(db: Session, follower_uid: str, following_uid: str) -> Optional[UserFollow]:
+    """查询一条关注记录（follower_uid 是否关注了 following_uid）。"""
+    stmt = select(UserFollow).where(
+        UserFollow.follower_uid == follower_uid,
+        UserFollow.following_uid == following_uid,
+    )
+    return db.execute(stmt).scalar_one_or_none()
+
+
+def is_following(db: Session, follower_uid: str, following_uid: str) -> bool:
+    """判断 follower_uid 是否已关注 following_uid（记录存在即代表已关注）。"""
+    return get_follow_record(db, follower_uid, following_uid) is not None
+
+
+def follow_user(db: Session, *, follower_uid: str, following_uid: str) -> UserFollow:
+    """新增关注记录（唯一索引兜底，业务层已保证不重复关注）。"""
+    record = UserFollow(follower_uid=follower_uid, following_uid=following_uid)
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def unfollow_user(db: Session, *, follower_uid: str, following_uid: str) -> bool:
+    """删除关注记录，返回是否删除了记录（未关注时返回 False）。"""
+    record = get_follow_record(db, follower_uid, following_uid)
+    if record is None:
+        return False
+    db.delete(record)
+    db.commit()
+    return True

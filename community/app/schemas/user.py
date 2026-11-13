@@ -114,6 +114,7 @@ class UserOut(BaseModel):
     last_login_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
+    is_admin: bool
 
 
 class UserPublicOut(BaseModel):
@@ -130,6 +131,7 @@ class UserPublicOut(BaseModel):
     level: int
     points: int
     created_at: datetime
+    is_follow: int = Field(0, description="当前登录用户是否关注该用户：0未关注，1已关注")
 
 
 class TokenOut(BaseModel):

@@ -49,7 +49,7 @@ user_router = APIRouter(prefix="/user", tags=["用户"])
 def _generate_uid(db: Session) -> str:
     """生成对外暴露的用户唯一标识（4位数开始，依次递增），极小概率重复时重试。"""
     for _ in range(5):
-        uid = str(crud_user.get_last_uid(db) + 1).zfill(4)
+        uid = secrets.randbelow(90_00) + 10_00
         if crud_user.get_user_by_uid(db, uid, include_deleted=True) is None:
             return uid
     raise AppException("用户标识生成失败，请稍后重试", code=500)
@@ -79,7 +79,7 @@ def register(payload: UserRegister, db: Session = Depends(get_db)) -> ApiRespons
         nickname=payload.username,
         avatar=payload.avatar,
     )
-    logger.info("用户注册成功 | id=%s uid=%s username=%s", user.id, user.uid, user.username)
+    logger.info("用户注册成功 | id=%s uid=%s username=%s", user.uid, user.uid, user.username)
     return ApiResponse.ok(UserOut.model_validate(user), msg="注册成功")
 
 
@@ -103,12 +103,12 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> ApiResponse[Toke
         raise ForbiddenException("账号待激活")
 
     crud_user.update_last_login(db, user)
-    logger.info("用户登录成功 | uid=%s username=%s", user.id, user.username)
+    logger.info("用户登录成功 | uid=%s username=%s", user.uid, user.username)
 
     return ApiResponse.ok(
         TokenOut(
-            access_token=create_access_token(user.id),
-            refresh_token=create_refresh_token(user.id),
+            access_token=create_access_token(user.uid),
+            refresh_token=create_refresh_token(user.uid),
             token_type="bearer",
             expires_in=get_access_token_expire_seconds(),
         ),
@@ -125,10 +125,10 @@ def login(payload: UserLogin, db: Session = Depends(get_db)) -> ApiResponse[Toke
 def refresh_token(payload: RefreshTokenRequest, db: Session = Depends(get_db)) -> ApiResponse[RefreshTokenOut]:
     """刷新 access_token。"""
     user = get_user_by_refresh_token(db, payload.refresh_token)
-    logger.info("刷新 token | uid=%s", user.id)
+    logger.info("刷新 token | uid=%s", user.uid)
     return ApiResponse.ok(
         RefreshTokenOut(
-            access_token=create_access_token(user.id),
+            access_token=create_access_token(user.uid),
             token_type="bearer",
             expires_in=get_access_token_expire_seconds(),
         ),
@@ -158,11 +158,11 @@ def logout(
         if (
             refresh_payload
             and refresh_payload.get("type") == TOKEN_TYPE_REFRESH
-            and refresh_payload.get("sub") == str(current_user.id)
+            and refresh_payload.get("sub") == str(current_user.uid)
         ):
             revoke_token(refresh_payload)
 
-    logger.info("用户退出登录 | uid=%s", current_user.id)
+    logger.info("用户退出登录 | uid=%s", current_user.uid)
     return ApiResponse.ok(None, msg="退出成功")
 
 
@@ -199,22 +199,75 @@ def update_me(
         update_data["signature"] = update_data.pop("bio")
 
     user = crud_user.update_user(db, current_user, update_data)
-    logger.info("用户修改资料 | uid=%s fields=%s", user.id, list(update_data.keys()))
+    logger.info("用户修改资料 | uid=%s fields=%s", user.uid, list(update_data.keys()))
     return ApiResponse.ok(UserOut.model_validate(user), msg="资料更新成功")
 
 @user_router.get(
     "/{uid}",
     response_model=ApiResponse[UserPublicOut],
     summary="查看他人主页信息",
-    description="登录用户可查看其他用户的公开信息（不含邮箱、状态等隐私字段）。",
+    description="登录用户可查看其他用户的公开信息（不含邮箱、状态等隐私字段），"
+                "并按当前登录用户计算 is_follow：已关注返回 1，未关注返回 0。",
 )
 def read_user(
     uid: int = Path(..., ge=1, description="用户ID"),
     db: Session = Depends(get_db),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
 ) -> ApiResponse[UserPublicOut]:
     """查看他人主页。"""
     user = crud_user.get_user_by_id(db, uid=uid)
     if user is None:
         raise NotFoundException("用户不存在")
-    return ApiResponse.ok(UserPublicOut.model_validate(user))
+    data = UserPublicOut.model_validate(user)
+    data.is_follow = (
+        1 if crud_user.is_following(db, follower_uid=current_user.uid, following_uid=user.uid) else 0
+    )
+    return ApiResponse.ok(data)
+
+
+@user_router.post(
+    "/follow/{uid}",
+    response_model=ApiResponse[None],
+    summary="关注用户",
+    description="当前登录用户关注指定用户，重复关注返回错误。",
+)
+def follow_user(
+    uid: int = Path(..., ge=1, description="用户ID"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[None]:
+    """关注其他用户。"""
+    if int(uid) == int(current_user.uid):
+        raise BadRequestException("不能关注自己")
+    target = crud_user.get_user_by_id(db, uid=uid)
+    if target is None:
+        raise NotFoundException("用户不存在")
+    print(current_user.uid, target.uid)
+    if crud_user.is_following(db, follower_uid=current_user.uid, following_uid=target.uid):
+        raise BadRequestException("已关注该用户")
+
+    crud_user.follow_user(db, follower_uid=current_user.uid, following_uid=target.uid)
+    logger.info("用户关注 | follower_id=%s following_id=%s", current_user.uid, uid)
+    return ApiResponse.ok(None, msg="关注成功")
+
+
+@user_router.post(
+    "/unfollow/{uid}",
+    response_model=ApiResponse[None],
+    summary="取消关注用户",
+    description="当前登录用户取消关注指定用户，未关注时返回错误。",
+)
+def unfollow_user(
+    uid: int = Path(..., ge=1, description="用户ID"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[None]:
+    """取消关注其他用户。"""
+    target = crud_user.get_user_by_id(db, uid=uid)
+    if target is None:
+        raise NotFoundException("用户不存在")
+    if not crud_user.unfollow_user(db, follower_uid=current_user.uid, following_uid=target.uid):
+        raise BadRequestException("尚未关注该用户")
+
+    logger.info("用户取消关注 | follower_id=%s following_id=%s", current_user.uid, uid)
+    return ApiResponse.ok(None, msg="取消关注成功")

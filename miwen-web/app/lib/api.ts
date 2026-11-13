@@ -208,3 +208,17 @@ export const getAllUserList = async () => {
   );
   return res.data;
 };
+
+export const followUser = async (uid: number) => {
+  const res = await request.post<ApiResult<UserInfo>>(
+    `/api/user/follow/${uid}`,
+  );
+  return res.data;
+};
+
+export const unfollowUser = async (uid: number) => {
+  const res = await request.post<ApiResult<UserInfo>>(
+    `/api/user/unfollow/${uid}`,
+  );
+  return res.data;
+};

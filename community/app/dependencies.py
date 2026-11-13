@@ -61,7 +61,6 @@ def get_current_user(
         uid = int(payload["sub"])
     except (TypeError, ValueError):
         raise UnauthorizedException("无效的 token")
-
     user = crud_user.get_user_by_id(db, uid)
     if user is None:
         raise UnauthorizedException("用户不存在或已注销")

@@ -70,11 +70,16 @@ def get_hot_topics_card(
 
 def read_user_list(
     db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_optional_user),
     page: int = Query(1, ge=1, description="页码，从 1 开始"),
     pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
 ) -> ApiResponse[PageResult[UserPublicOut]]:
     """获取所有用户列表。游客可访问，返回所有用户的公开信息。不包含邮箱、状态等隐私字段。"""
     users = crud_user.list_users(db, offset=(page - 1) * pageSize, limit=pageSize)
+    for user in users:
+        user.is_follow = (
+            1 if current_user is not None and crud_user.is_following(db, follower_uid=current_user.uid, following_uid=user.uid) else 0
+        )
     data =  PageResult[UserPublicOut].create(
         lists=[UserPublicOut.model_validate(user) for user in users],
         total=crud_user.count_users(db),
