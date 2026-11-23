@@ -139,7 +139,10 @@ const App = () => {
 
             <div className={styles["right-area"]}>
               <SearchBar />
-              <Link href="/topics/write" className={styles["btn-primary"]}>
+              <Link
+                href={`${userInfo?.uid ? "/topics/write" : "/login"}`}
+                className={styles["btn-primary"]}
+              >
                 <PlusOutlined />
                 写作
               </Link>

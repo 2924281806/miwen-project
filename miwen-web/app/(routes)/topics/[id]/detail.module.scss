@@ -122,10 +122,15 @@
         margin-top: 16px;
         padding: 12px;
 
+        :global(.tox .tox-toolbar__primary) {
+          justify-content: flex-end !important;
+        }
         .comment-input {
-          &:focus-within {
-            border-color: #1e88e5;
-            box-shadow: 0 0 0 2px rgba(0, 181, 173, 0.15);
+          display: inline-flex;
+          width: 100%;
+          gap: 12px;
+          .comment-editor {
+            flex: 1;
           }
         }
 

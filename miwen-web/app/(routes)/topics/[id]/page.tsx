@@ -1,12 +1,15 @@
 // 帖子详情页
 "use client";
 import { SafeHtml } from "@/app/components/Dompurify";
+import TinyEditor from "@/app/components/Editor/TinyEditor";
 import {
   favoriteTopic,
+  followUser,
   getAllForumList,
   getTopicListDetail,
   likeTopic,
   unfavoriteTopic,
+  unfollowUser,
   unlikeTopic,
 } from "@/app/lib/api";
 import { getUserState } from "@/app/store/userStore";
@@ -23,7 +26,7 @@ import {
   StarOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Avatar, Button, Empty, Input, message } from "antd";
+import { Avatar, Button, Empty, message } from "antd";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -36,6 +39,8 @@ export default function TopicDetail() {
   const [forumName, setForumName] = useState<string>("");
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
+  const [following, setFollowing] = useState(false);
+  const currentUser = getUserState().userInfo;
 
   useEffect(() => {
     const init = async () => {
@@ -121,6 +126,42 @@ export default function TopicDetail() {
     }
   };
 
+  const toggleFollow = async (uid: number) => {
+    if (!getUserState().token) {
+      message.warning("请先登录后再关注");
+      return;
+    }
+    if (uid === Number(getUserState().userInfo?.uid)) {
+      message.warning("不能关注自己");
+      return;
+    }
+    if (!uid) {
+      message.warning("用户不存在");
+      return;
+    }
+    try {
+      if (following) {
+        const res = await unfollowUser(uid);
+        if (res?.code === 200) {
+          setFollowing(false);
+          message.success("已取消关注");
+        } else {
+          message.error(res?.msg || "取消关注失败");
+        }
+      } else {
+        const res = await followUser(uid);
+        if (res?.code === 200) {
+          setFollowing(true);
+          message.success("关注成功");
+        } else {
+          message.error(res?.msg || "关注失败");
+        }
+      }
+    } catch {
+      message.error("操作失败，请稍后重试");
+    }
+  };
+
   const author = topicDetail?.author;
 
   return loading ? (
@@ -196,24 +237,36 @@ export default function TopicDetail() {
                 收藏 {topicDetail?.favorites ?? 0}
               </Button>
             </div>
-
-            <div className={styles["comment-box"]}>
-              <Input.TextArea
-                className={styles["comment-input"]}
-                placeholder="说点什么..."
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                autoSize={{ minRows: 2, maxRows: 4 }}
-                maxLength={500}
-              />
-              <Button
-                type="primary"
-                className={styles["reply-btn"]}
-                onClick={() => message.info("评论功能开发中，敬请期待")}
-              >
-                快速回复
-              </Button>
-            </div>
+            {currentUser?.uid && (
+              <div className={styles["comment-box"]}>
+                <div className={styles["comment-input"]}>
+                  <div>
+                    <Avatar
+                      size={32}
+                      src={currentUser?.avatar || undefined}
+                      icon={<UserOutlined />}
+                    />
+                  </div>
+                  <div className={styles["comment-editor"]}>
+                    <TinyEditor
+                      value={comment}
+                      onChange={setComment}
+                      height={150}
+                      toolbar="bold italic underline"
+                      location="bottom"
+                      placeholder="说点什么..."
+                    />
+                  </div>
+                </div>
+                <Button
+                  type="primary"
+                  className={styles["reply-btn"]}
+                  onClick={() => message.info("评论功能开发中，敬请期待")}
+                >
+                  快速回复
+                </Button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -245,7 +298,7 @@ export default function TopicDetail() {
                 type="primary"
                 className={styles["follow-btn"]}
                 icon={<PlusOutlined />}
-                onClick={() => message.info("关注功能开发中，敬请期待")}
+                onClick={() => toggleFollow(parseInt(author?.uid || ""))}
               >
                 关注作者
               </Button>

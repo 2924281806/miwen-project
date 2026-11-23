@@ -270,15 +270,14 @@ def unfavorite_topic(
 )
 def get_topic_list_detail(
     topic_id: int = Path(..., ge=1, description="帖子编号 topic_id"),
-    current_user: User = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[TopicOut]:
     """获取帖子详情。"""
     topic = crud_topic.get_topic_by_topic_id(db, topic_id)
     if topic is None:
         raise NotFoundException("帖子不存在")
-    print('****************************',current_user.uid)
-    if current_user.uid is None:
+    if current_user is None or current_user.uid is None:
         out = _topic_out(topic, None, db)
     else:
         out = _topic_out(topic, current_user, db)

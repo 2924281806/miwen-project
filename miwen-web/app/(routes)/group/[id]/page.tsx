@@ -7,6 +7,7 @@ import {
   leaveForum,
   otherUserInfo,
 } from "@/app/lib/api";
+import { useUserStore } from "@/app/store/userStore";
 import type { ForumListDto } from "@/app/types/forum";
 import type { CreatePostDto } from "@/app/types/topic";
 import { timeAgo } from "@/app/utils/time";
@@ -43,6 +44,7 @@ export default function CircleDetail() {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
+  const userInfo = useUserStore((state) => state.userInfo);
 
   useEffect(() => {
     const init = async () => {
@@ -106,6 +108,10 @@ export default function CircleDetail() {
     0,
   );
   const handleNewPostClick = () => {
+    if (!userInfo?.uid) {
+      message.error("请先登录");
+      return;
+    }
     router.push(`/topics/write?fid=${forumId}`);
   };
 

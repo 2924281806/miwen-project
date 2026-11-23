@@ -242,7 +242,6 @@ def follow_user(
     target = crud_user.get_user_by_id(db, uid=uid)
     if target is None:
         raise NotFoundException("用户不存在")
-    print(current_user.uid, target.uid)
     if crud_user.is_following(db, follower_uid=current_user.uid, following_uid=target.uid):
         raise BadRequestException("已关注该用户")
 

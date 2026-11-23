@@ -1,6 +1,7 @@
 /* 右侧栏 */
 "use client";
 import { getHotPostList } from "@/app/lib/api";
+import { useUserStore } from "@/app/store/userStore";
 import { CreatePostDto } from "@/app/types/topic";
 import {
   FireFilled,
@@ -8,6 +9,7 @@ import {
   PlusOutlined,
   UserOutlined,
 } from "@ant-design/icons";
+import { message } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "./index.module.scss";
@@ -35,8 +37,13 @@ export default function SiderRight() {
   }, []);
   const router = useRouter();
   const [hotPostList, setHotPostList] = useState<CreatePostDto[]>([]);
+  const userInfo = useUserStore((state) => state.userInfo);
 
   const handleWriteClick = () => {
+    if (!userInfo?.uid) {
+      message.error("请先登录");
+      return;
+    }
     router.push("topics/write");
   };
 

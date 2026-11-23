@@ -1,6 +1,6 @@
 "use client";
+import TinyEditor from "@/app/components/Editor/TinyEditor";
 import ImageUpload from "@/app/components/ImageUpload";
-import TinyEditor from "@/app/components/markdown/TinyEditor";
 import { createPost, getAllForumList, uploadImage } from "@/app/lib/api";
 import type { ApiResult } from "@/app/types/user";
 import { PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";

@@ -193,7 +193,7 @@ export const getHotPostImages = async () => {
   const res = await request.get<ApiResult<string[]>>("/api/common/hot/images");
   return res.data;
 };
-
+// 获取热门帖子图片（登录用户）
 export const getHotPostImageList = async () => {
   const res = await request.get<ApiResult<HotTopicsImageOut[]>>(
     "/api/hotTopicsImage/hotImageList",
@@ -208,28 +208,28 @@ export const getAllUserList = async () => {
   );
   return res.data;
 };
-
+// 关注用户（登录用户）
 export const followUser = async (uid: number) => {
   const res = await request.post<ApiResult<UserInfo>>(
     `/api/user/follow/${uid}`,
   );
   return res.data;
 };
-
+// 取消关注用户（登录用户）
 export const unfollowUser = async (uid: number) => {
   const res = await request.post<ApiResult<UserInfo>>(
     `/api/user/unfollow/${uid}`,
   );
   return res.data;
 };
-
+// 加入圈子（登录用户）
 export const joinForum = async (forum_id: number) => {
   const res = await request.post<ApiResult<ForumListDto>>(
     `/api/forum/join/${forum_id}`,
   );
   return res.data;
 };
-
+// 退出圈子（登录用户）
 export const leaveForum = async (forum_id: number) => {
   const res = await request.post<ApiResult<ForumListDto>>(
     `/api/forum/leave/${forum_id}`,

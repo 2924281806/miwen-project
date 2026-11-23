@@ -44,8 +44,14 @@ export interface TinyEditorProps {
   height?: number;
   readonly?: boolean;
   disabled?: boolean;
+  /** 占位符 */
+  placeholder?: string;
+  /** 工具栏位置 */
+  location?: "top" | "bottom";
   /** 额外tinymce init配置，会合并默认配置 */
   initExtra?: Record<string, unknown>;
+  /** 工具栏配置 */
+  toolbar?: string;
   /** 编辑器实例回调，拿到editor调用原生api */
   onReady?: (editor: TinyMCEEditor) => void;
 }
@@ -58,7 +64,10 @@ export default function TinyEditor(props: TinyEditorProps) {
     height = 400,
     readonly = false,
     disabled = false,
+    location = "top",
+    placeholder = "请输入帖子内容",
     initExtra = {},
+    toolbar = "undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright | bullist numlist | link image table | code preview clearallformat",
     onReady,
   } = props;
 
@@ -82,12 +91,12 @@ export default function TinyEditor(props: TinyEditorProps) {
   // 默认配置
   const initConfig = {
     height,
+    toolbar_location: location,
     menubar: false,
     language: "zh-CN",
-    placeholder: "请输入帖子内容",
+    placeholder,
     plugins: "advlist autolink link image table lists code preview",
-    toolbar:
-      "undo redo | blocks | bold italic underline strikethrough | alignleft aligncenter alignright | bullist numlist | link image table | code preview clearallformat",
+    toolbar: toolbar,
     content_style:
       "body { font-family:system-ui; font-size:14px; } img { max-width:100%; height:auto; }",
 

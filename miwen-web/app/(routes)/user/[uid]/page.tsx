@@ -171,7 +171,13 @@ export default function UserProfile() {
             <Button
               block
               className={styles.startBtn}
-              onClick={() => router.push("/topics/write")}
+              onClick={() => {
+                if (!currentUserInfo?.uid) {
+                  message.warning("请先登录");
+                  return;
+                }
+                router.push("topics/write");
+              }}
             >
               <PlusOutlined />
               开始创作
