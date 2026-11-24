@@ -4,9 +4,9 @@ import SiderRight from "@/app/components/SiderRight";
 import { followUser, getAllUserList, unfollowUser } from "@/app/lib/api";
 import { useUserStore } from "@/app/store/userStore";
 import type { UserInfo } from "@/app/types/user";
+import { useRouterPush } from "@/app/utils/routes";
 import { PlusOutlined } from "@ant-design/icons";
 import { Button, Empty, message, Typography } from "antd";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "./follow.module.scss";
 
@@ -14,9 +14,9 @@ const { Paragraph } = Typography;
 const defaultCover = "/logo.svg";
 
 export default function Follow() {
-  const router = useRouter();
   const [userList, setUserList] = useState<UserInfo[]>([]);
   const userInfo = useUserStore((state) => state.userInfo);
+  const routePush = useRouterPush();
 
   useEffect(() => {
     const init = async () => {
@@ -86,7 +86,7 @@ export default function Follow() {
                   <div className={styles.itemBody}>
                     <div
                       className={styles.itemTitle}
-                      onClick={() => router.push(`/user/${item.uid}`)}
+                      onClick={() => routePush(`/user/${item.uid}`)}
                     >
                       {item.username}
                     </div>

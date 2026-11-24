@@ -4,6 +4,7 @@
 """
 
 from app.models.topics import Topic  # noqa: F401
+from app.models.topic_comment import CommentLike, TopicComment  # noqa: F401
 from app.models.user import User  # noqa: F401
 from app.models.user_follow import UserFollow  # noqa: F401
 from app.models.forum import Forum  # noqa: F401

@@ -1,12 +1,11 @@
 "use client";
-
 import { login } from "@/app/lib/api";
 import { useUserStore } from "@/app/store/userStore";
 import type { LoginInfo } from "@/app/types/user";
 import { Button, Form, Input } from "antd";
 import axios from "axios";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { FormEvent } from "react";
 import { useState } from "react";
 import styles from "../auth.module.scss";
@@ -17,6 +16,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const searchParams = useSearchParams();
 
   const setToken = useUserStore((s) => s.setToken);
 
@@ -43,7 +43,8 @@ export default function Login() {
       const accessToken = res.data.access_token;
       setToken(accessToken);
       useUserStore.getState().triggerRefreshUser(true);
-      router.push("/");
+      const redirect = searchParams.get("redirect") || "/";
+      router.push(decodeURIComponent(redirect || "/"));
     } catch (err) {
       const msg = axios.isAxiosError(err) ? err.response?.data?.msg : "";
       setError(msg);

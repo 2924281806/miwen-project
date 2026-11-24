@@ -29,3 +29,7 @@ body {
 .tox .tox-statusbar {
   display: none !important;
 }
+
+.tox .tox-edit-area::before {
+  border: none !important;
+}

@@ -1,8 +1,10 @@
 // 帖子详情页
 "use client";
+import Comment from "@/app/components/Comment";
 import { SafeHtml } from "@/app/components/Dompurify";
 import TinyEditor from "@/app/components/Editor/TinyEditor";
 import {
+  createComment,
   favoriteTopic,
   followUser,
   getAllForumList,
@@ -40,6 +42,8 @@ export default function TopicDetail() {
   const [comment, setComment] = useState("");
   const [loading, setLoading] = useState(true);
   const [following, setFollowing] = useState(false);
+  /** 评论列表刷新标记：发表评论后自增，触发 Comment 组件重新拉取 */
+  const [commentKey, setCommentKey] = useState(0);
   const currentUser = getUserState().userInfo;
 
   useEffect(() => {
@@ -162,6 +166,26 @@ export default function TopicDetail() {
     }
   };
 
+  /** 发表评论（快速回复） */
+  const handleCommentSubmit = async () => {
+    if (!comment.trim()) {
+      message.warning("评论内容不能为空");
+      return;
+    }
+    try {
+      const res = await createComment(tid, comment);
+      if (res.code === 200) {
+        message.success("评论成功");
+        setComment("");
+        setCommentKey((key) => key + 1);
+      } else {
+        message.warning(res.msg || "评论失败");
+      }
+    } catch {
+      message.error("评论失败，请稍后重试");
+    }
+  };
+
   const author = topicDetail?.author;
 
   return loading ? (
@@ -174,7 +198,7 @@ export default function TopicDetail() {
     <div className={styles["header"]}>
       <div className={styles["content"]}>
         {/* ===== 左栏：随页面滚动 ===== */}
-        <div>
+        <div className={styles["left"]}>
           <div className={styles["breadcrumb"]}>
             <Link href="/group">圈子</Link>
             {forumName && (
@@ -261,13 +285,14 @@ export default function TopicDetail() {
                 <Button
                   type="primary"
                   className={styles["reply-btn"]}
-                  onClick={() => message.info("评论功能开发中，敬请期待")}
+                  onClick={handleCommentSubmit}
                 >
                   快速回复
                 </Button>
               </div>
             )}
           </div>
+          <Comment topicId={tid} refreshKey={commentKey} />
         </div>
 
         {/* ===== 右栏：sticky 固定不随滚动 ===== */}

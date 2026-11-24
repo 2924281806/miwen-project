@@ -3,6 +3,7 @@
 import { followUser, otherUserInfo, unfollowUser } from "@/app/lib/api";
 import { useUserStore } from "@/app/store/userStore";
 import type { UserInfo } from "@/app/types/user";
+import { useRouterPush } from "@/app/utils/routes";
 import {
   HighlightOutlined,
   PlusOutlined,
@@ -38,6 +39,7 @@ export default function UserProfile() {
   const [following, setFollowing] = useState(false);
   const [activeTab, setActiveTab] = useState("activity");
   const currentUserInfo = useUserStore((state) => state.userInfo);
+  const routePush = useRouterPush();
 
   useEffect(() => {
     if (!uid) return;
@@ -79,7 +81,7 @@ export default function UserProfile() {
   };
   // 跳转修改资料页面
   const updateUserInfo = () => {
-    router.push(`/user/update/${currentUserInfo?.uid}`);
+    routePush(`/user/update/${currentUserInfo?.uid}`);
   };
 
   return (
@@ -172,11 +174,7 @@ export default function UserProfile() {
               block
               className={styles.startBtn}
               onClick={() => {
-                if (!currentUserInfo?.uid) {
-                  message.warning("请先登录");
-                  return;
-                }
-                router.push("topics/write");
+                routePush("topics/write");
               }}
             >
               <PlusOutlined />

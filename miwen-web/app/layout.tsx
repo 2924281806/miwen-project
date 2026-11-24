@@ -1,4 +1,4 @@
-import Header from "@/app/components/header/Header";
+import Header from "@/app/components/Header/Header";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";

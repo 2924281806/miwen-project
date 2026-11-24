@@ -1,7 +1,9 @@
 .header {
   min-height: 100vh;
   min-width: 1032px;
-
+  .left {
+    width: 780px;
+  }
   .breadcrumb {
     align-items: center;
     color: #8491a5;
@@ -34,9 +36,8 @@
     .main {
       box-sizing: border-box;
       flex-shrink: 0;
-      width: 700px;
       overflow: auto;
-      padding: 12px;
+      padding: 12px 24px;
       border-radius: 8px;
       margin-top: 12px;
       background: #fff;
@@ -117,7 +118,6 @@
       }
 
       .comment-box {
-        background: #f8f9fa;
         border-radius: 8px;
         margin-top: 16px;
         padding: 12px;

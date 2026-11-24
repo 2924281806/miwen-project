@@ -1,5 +1,5 @@
 "use client";
-import SearchBar from "@/app/components/header/SearchBar";
+import SearchBar from "@/app/components/Header/SearchBar";
 import { getMyUser, logout } from "@/app/lib/api";
 import { useUserStore } from "@/app/store/userStore";
 import type { UserInfo } from "@/app/types/user";
@@ -63,7 +63,7 @@ const App = () => {
     try {
       const res = await logout();
       if (res?.code === 200) {
-        router.push("/");
+        router.push(location.pathname);
         useUserStore.getState().triggerRefreshUser(false);
         userLogout();
       }
@@ -140,14 +140,14 @@ const App = () => {
             <div className={styles["right-area"]}>
               <SearchBar />
               <Link
-                href={`${userInfo?.uid ? "/topics/write" : "/login"}`}
+                href={`${userInfo?.uid ? "/topics/write" : "/login?redirect=/topics/write"}`}
                 className={styles["btn-primary"]}
               >
                 <PlusOutlined />
                 写作
               </Link>
 
-              {userInfo ? (
+              {userInfo?.uid ? (
                 <div className={styles["user-area"]}>
                   <Popover
                     placement="bottomLeft"

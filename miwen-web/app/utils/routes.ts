@@ -1,34 +1,18 @@
-import type { MenuProps } from "antd";
-type MenuItem = Required<MenuProps>["items"][number];
+"use client";
+import { useUserStore } from "@/app/store/userStore";
+import { useRouter } from "next/navigation";
 
-const menuItems: MenuItem[] = [
-  {
-    key: "/",
-    label: "首页",
-  },
-  {
-    key: "/login",
-    label: "登录",
-  },
-  {
-    key: "/register",
-    label: "注册",
-  },
-  {
-    key: "/home",
-    label: "home页",
-  },
-  {
-    key: "/hot",
-    label: "热榜",
-  },
-  {
-    key: "/recommend",
-    label: "推荐",
-  },
-  {
-    key: "/group",
-    label: "圈子",
-  },
-];
-export default menuItems;
+export function useRouterPush() {
+  const router = useRouter();
+  const userInfo = useUserStore((state) => state.userInfo);
+
+  const routePush = (path: string) => {
+    const redirect = encodeURIComponent(path);
+    if (!userInfo?.uid) {
+      router.push(`/login?redirect=${redirect}`);
+      return;
+    }
+    router.push(path);
+  };
+  return routePush;
+}

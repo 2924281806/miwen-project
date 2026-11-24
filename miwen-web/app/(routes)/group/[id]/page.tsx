@@ -7,9 +7,9 @@ import {
   leaveForum,
   otherUserInfo,
 } from "@/app/lib/api";
-import { useUserStore } from "@/app/store/userStore";
 import type { ForumListDto } from "@/app/types/forum";
 import type { CreatePostDto } from "@/app/types/topic";
+import { useRouterPush } from "@/app/utils/routes";
 import { timeAgo } from "@/app/utils/time";
 import {
   CommentOutlined,
@@ -27,7 +27,7 @@ import { Avatar, Button, Empty, message, Typography } from "antd";
 import DOMPurify from "dompurify";
 import { convert } from "html-to-text";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "./detail.module.scss";
 const { Paragraph } = Typography;
@@ -35,7 +35,7 @@ const { Paragraph } = Typography;
 type TabKey = "all" | "hot" | "essence";
 
 export default function CircleDetail() {
-  const router = useRouter();
+  const routePush = useRouterPush();
   const params = useParams();
   const forumId = Number(params.id);
   const [forum, setForum] = useState<ForumListDto | null>(null);
@@ -44,7 +44,6 @@ export default function CircleDetail() {
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [keyword, setKeyword] = useState("");
   const [loading, setLoading] = useState(true);
-  const userInfo = useUserStore((state) => state.userInfo);
 
   useEffect(() => {
     const init = async () => {
@@ -108,11 +107,7 @@ export default function CircleDetail() {
     0,
   );
   const handleNewPostClick = () => {
-    if (!userInfo?.uid) {
-      message.error("请先登录");
-      return;
-    }
-    router.push(`/topics/write?fid=${forumId}`);
+    routePush(`/topics/write?fid=${forumId}`);
   };
 
   const toggleJoin = async () => {

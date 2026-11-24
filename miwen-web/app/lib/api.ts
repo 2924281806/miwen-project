@@ -1,3 +1,4 @@
+import type { CommentItem } from "@/app/types/comment";
 import type {
   CreateForumDto,
   CreateForumDtoParams,
@@ -233,6 +234,39 @@ export const joinForum = async (forum_id: number) => {
 export const leaveForum = async (forum_id: number) => {
   const res = await request.post<ApiResult<ForumListDto>>(
     `/api/forum/leave/${forum_id}`,
+  );
+  return res.data;
+};
+// 获取帖子下的评论列表（游客可访问）
+export const getComments = async (topicId: number) => {
+  const res = await request.get<ApiResult<CommentItem[]>>(
+    `/api/topic/comments/${topicId}`,
+  );
+  return res.data;
+};
+// 发布评论 / 回复帖子下的评论（登录用户）
+export const createComment = async (
+  topicId: number,
+  content: string,
+  parentId?: number,
+) => {
+  const res = await request.post<ApiResult<CommentItem>>(
+    `/api/topic/comments/${topicId}`,
+    parentId ? { content, parent_id: parentId } : { content },
+  );
+  return res.data;
+};
+// 点赞评论（登录用户），返回最新点赞数量
+export const likeComment = async (commentId: number) => {
+  const res = await request.post<ApiResult<number>>(
+    `/api/topic/commentLike/${commentId}`,
+  );
+  return res.data;
+};
+// 取消点赞评论（登录用户），返回最新点赞数量
+export const unlikeComment = async (commentId: number) => {
+  const res = await request.post<ApiResult<number>>(
+    `/api/topic/commentUnlike/${commentId}`,
   );
   return res.data;
 };
