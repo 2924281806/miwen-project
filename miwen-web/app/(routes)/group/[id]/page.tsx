@@ -111,7 +111,6 @@ export default function CircleDetail() {
   };
 
   const toggleJoin = async () => {
-    console.log(forum);
     if (forum?.is_join === 0) {
       const res = await joinForum(forumId);
       if (res?.code === 200) {

@@ -1,4 +1,4 @@
-import type { CommentItem } from "@/app/types/comment";
+import type { CommentItem, ReplyItem } from "@/app/types/comment";
 import type {
   CreateForumDto,
   CreateForumDtoParams,
@@ -240,30 +240,38 @@ export const leaveForum = async (forum_id: number) => {
 // 获取帖子下的评论列表（游客可访问）
 export const getComments = async (topicId: number) => {
   const res = await request.get<ApiResult<CommentItem[]>>(
-    `/api/topic/comments/${topicId}`,
+    `/api/topic/getComments/${topicId}`,
   );
   return res.data;
 };
-// 发布评论 / 回复帖子下的评论（登录用户）
-export const createComment = async (
-  topicId: number,
-  content: string,
-  parentId?: number,
-) => {
+// 发布评论（登录用户）
+export const createComment = async (topicId: number, content: string) => {
   const res = await request.post<ApiResult<CommentItem>>(
     `/api/topic/comments/${topicId}`,
-    parentId ? { content, parent_id: parentId } : { content },
+    { content },
   );
   return res.data;
 };
-// 点赞评论（登录用户），返回最新点赞数量
+// 对评论发表回复（登录用户），commentId 为四位数评论编号；replyToId 为被回复的回复编号（回复其他回复时传）
+export const createReply = async (
+  commentId: number,
+  content: string,
+  replyToId?: number,
+) => {
+  const res = await request.post<ApiResult<ReplyItem>>(
+    `/api/topic/reply/${commentId}`,
+    { content, reply_to_id: replyToId },
+  );
+  return res.data;
+};
+// 点赞评论（登录用户），commentId 为四位数评论编号，返回最新点赞数量
 export const likeComment = async (commentId: number) => {
   const res = await request.post<ApiResult<number>>(
     `/api/topic/commentLike/${commentId}`,
   );
   return res.data;
 };
-// 取消点赞评论（登录用户），返回最新点赞数量
+// 取消点赞评论（登录用户），commentId 为四位数评论编号，返回最新点赞数量
 export const unlikeComment = async (commentId: number) => {
   const res = await request.post<ApiResult<number>>(
     `/api/topic/commentUnlike/${commentId}`,

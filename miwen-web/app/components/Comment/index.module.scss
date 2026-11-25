@@ -59,6 +59,12 @@
     .tinyInput {
       margin-top: 4px;
     }
+
+    .reply-btn {
+      font-size: 12px;
+      float: right;
+      margin-top: 8px;
+    }
   }
 
   .meta {
@@ -80,6 +86,10 @@
     }
   }
 
+  .replyTo {
+    color: #056de8;
+    margin-left: 8px;
+  }
   .content {
     color: #121212;
     font-size: 14px;
@@ -95,7 +105,7 @@
     justify-content: space-between;
     margin-top: 8px;
     .likeContainer {
-      align-items: center;
+      align-items: baseline;
       display: flex;
       gap: 4px;
     }
@@ -111,7 +121,7 @@
       }
     }
     .likeBtn {
-      align-items: center;
+      align-items: baseline;
       color: #8590a6;
       cursor: pointer;
       display: inline-flex;
@@ -122,7 +132,9 @@
         color: #056de8;
       }
     }
-
+    .likedIcon {
+      color: #056de8;
+    }
     .likedUsers {
       align-items: center;
       display: inline-flex;
@@ -135,7 +147,9 @@
       }
     }
   }
-
+  .replyText {
+    justify-content: flex-end;
+  }
   // 回复列表
   .replies {
     background: #f7f8fa;
@@ -152,6 +166,13 @@
         border-bottom: none;
         padding-bottom: 4px;
       }
+    }
+
+    // 回复下的下级回复（reply_to_id 指向该回复）
+    .children {
+      border-left: 2px solid #e5e6eb;
+      margin-left: 40px;
+      padding-left: 8px;
     }
   }
 }

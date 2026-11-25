@@ -13,7 +13,7 @@ from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError
 from sqlalchemy.orm import Session
 
-from app.crud import crud_user
+from app.crud import crud_user, crud_topic
 from app.database import get_db
 from app.dependencies import bearer_scheme, get_current_user, get_user_by_refresh_token
 from app.exceptions import AppException, BadRequestException, ForbiddenException, NotFoundException
@@ -222,6 +222,7 @@ def read_user(
     data.is_follow = (
         1 if crud_user.is_following(db, follower_uid=current_user.uid, following_uid=user.uid) else 0
     )
+    data.points = crud_topic.count_topics_by_uid(db, user.uid)
     return ApiResponse.ok(data)
 
 

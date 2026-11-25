@@ -18,7 +18,14 @@ from app.exceptions import AppException, BadRequestException, ForbiddenException
 from app.models.topics import Topic
 from app.models.user import User
 from app.schemas.common import ApiResponse, PageResult
-from app.schemas.comment import CommentAuthorOut, CommentCreate, CommentOut
+from app.schemas.comment import (
+    CommentAuthorOut,
+    CommentCreate,
+    CommentOut,
+    ReplyCreate,
+    ReplyOut,
+    ReplyToCommentOut,
+)
 from app.schemas.topics import AuthorOut, TopicCreate, TopicOut, TopicUpdate
 
 logger = logging.getLogger(__name__)
@@ -33,6 +40,24 @@ def _generate_topic_id(db: Session) -> int:
         if crud_topic.get_topic_by_topic_id(db, topic_id, include_deleted=True) is None:
             return topic_id
     raise AppException("帖子编号生成失败，请稍后重试", code=500)
+
+
+def _generate_comment_id(db: Session) -> int:
+    """生成对外暴露的评论唯一编号（四位数随机），极小概率重复时重试。"""
+    for _ in range(5):
+        comment_id = secrets.randbelow(9000) + 1000
+        if crud_comment.get_comment_by_comment_id(db, comment_id) is None:
+            return comment_id
+    raise AppException("评论编号生成失败，请稍后重试", code=500)
+
+
+def _generate_reply_id(db: Session) -> int:
+    """生成对外暴露的回复唯一编号（四位数随机），极小概率重复时重试。"""
+    for _ in range(5):
+        reply_id = secrets.randbelow(9000) + 1000
+        if crud_comment.get_reply_by_reply_id(db, reply_id) is None:
+            return reply_id
+    raise AppException("回复编号生成失败，请稍后重试", code=500)
 
 
 def _get_own_topic(db: Session, topic_id: int, current_user: User) -> Topic:
@@ -315,16 +340,42 @@ def _build_comment_out(
     users_map: dict,
     like_users_map: dict,
 ) -> CommentOut:
-    """组装单条评论出参：作者、点赞数量、点赞用户信息列表（回复由调用方填充）。"""
+    """组装单条评论出参：评论编号、作者、点赞数量、点赞用户信息列表（回复由调用方填充）。"""
     like_users = like_users_map.get(comment.id, [])
     return CommentOut(
-        id=comment.id,
+        comment_id=comment.comment_id,
+        topic_id=comment.topic_id,
         content=comment.content,
         uid=comment.uid,
         created_at=comment.created_at,
         likes=len(like_users),
         author=_comment_author_out(users_map.get(comment.uid)),
         liked_users=[_comment_author_out(user) for user in like_users],
+    )
+
+
+def _build_reply_out(reply, users_map: dict, replies_map: Optional[dict] = None) -> ReplyOut:
+    """组装单条回复出参：回复编号、外链的帖子编号与评论编号、回复用户信息；
+    回复其他回复时（reply_to_id 非空）组装 toComment（被回复的回复摘要）。"""
+    to_comment = None
+    if reply.reply_to_id is not None:
+        target = (replies_map or {}).get(reply.reply_to_id)
+        if target is not None:
+            to_comment = ReplyToCommentOut(
+                reply_id=target.reply_id,
+                content=target.content,
+                author=_comment_author_out(users_map.get(target.uid)),
+            )
+    return ReplyOut(
+        reply_id=reply.reply_id,
+        topic_id=reply.topic_id,
+        comment_id=reply.comment_id,
+        content=reply.content,
+        uid=reply.uid,
+        created_at=reply.created_at,
+        author=_comment_author_out(users_map.get(reply.uid)),
+        reply_to_id=reply.reply_to_id,
+        to_comment=to_comment,
     )
 
 
@@ -341,35 +392,50 @@ def _load_comment_context(db: Session, comments: list) -> tuple[dict, dict]:
 
 
 @topic_router.get(
-    "/comments/{topic_id}",
+    "/getComments/{topic_id}",
     response_model=ApiResponse[List[CommentOut]],
     summary="获取帖子评论列表",
-    description="按帖子编号查询其全部评论，包含字段：评论ID、评论内容、评论时间、评论用户uid与用户信息、"
-                "点赞数量、点赞用户信息列表、回复信息（两级评论，回复挂在顶级评论下），按评论时间正序排列，游客可访问。",
+    description="按帖子编号查询其全部评论，包含字段：评论唯一编号 comment_id（四位数随机生成）、评论内容、评论时间、"
+                "评论用户uid与用户信息、点赞数量、点赞用户信息列表、回复信息（回复挂在所属评论下，"
+                "每条回复含回复编号 reply_id、外链的帖子编号与评论编号），按评论时间正序排列，游客可访问。",
 )
 def get_topic_comments(
     topic_id: int = Path(..., ge=1, description="帖子编号 topic_id"),
     db: Session = Depends(get_db),
 ) -> ApiResponse[List[CommentOut]]:
-    """获取帖子下的评论列表。"""
+    """获取帖子下的评论列表（含回复）。"""
     topic = crud_topic.get_topic_by_topic_id(db, topic_id)
+
     if topic is None:
         raise NotFoundException("帖子不存在")
 
-    top_comments = crud_comment.list_topic_comments(db, topic_id)
-    replies = crud_comment.list_replies(db, [comment.id for comment in top_comments])
-    users_map, like_users_map = _load_comment_context(db, [*top_comments, *replies])
-
-    replies_by_parent: dict = {}
+    comments = crud_comment.list_topic_comments(db, topic_id)
+    replies = crud_comment.list_replies(db, [comment.comment_id for comment in comments])
+    users_map, like_users_map = _load_comment_context(db, comments)
     for reply in replies:
-        replies_by_parent.setdefault(reply.parent_id, []).append(
-            _build_comment_out(reply, users_map, like_users_map)
-        )
+        if reply.uid not in users_map:
+            user = crud_user.get_user_by_uid(db, reply.uid)
+            if user is not None:
+                users_map[reply.uid] = user
+
+    replies_map = {reply.reply_id: reply for reply in replies}
+    reply_outs = {
+        reply.reply_id: _build_reply_out(reply, users_map, replies_map) for reply in replies
+    }
+    # reply_to_id 等于某条回复的 reply_id 时，挂到该回复的 children 下，展示在它下一级
+    replies_by_comment: dict = {}
+    for reply in replies:
+        out = reply_outs[reply.reply_id]
+        parent = reply_outs.get(reply.reply_to_id) if reply.reply_to_id is not None else None
+        if parent is not None and parent.reply_id != out.reply_id and parent.comment_id == out.comment_id:
+            parent.children.append(out)
+        else:
+            replies_by_comment.setdefault(reply.comment_id, []).append(out)
 
     outs = []
-    for comment in top_comments:
+    for comment in comments:
         out = _build_comment_out(comment, users_map, like_users_map)
-        out.replies = replies_by_parent.get(comment.id, [])
+        out.replies = replies_by_comment.get(comment.comment_id, [])
         outs.append(out)
     return ApiResponse.ok(outs, msg="查询成功")
 
@@ -377,8 +443,8 @@ def get_topic_comments(
 @topic_router.post(
     "/comments/{topic_id}",
     response_model=ApiResponse[CommentOut],
-    summary="发布评论 / 回复",
-    description="登录用户对指定帖子发表评论；回复时传 parent_id（只能回复顶级评论，不支持回复的回复）。",
+    summary="发布评论",
+    description="登录用户对指定帖子发表评论，自动生成四位数随机唯一评论编号 comment_id。",
 )
 def create_topic_comment(
     payload: CommentCreate,
@@ -386,7 +452,7 @@ def create_topic_comment(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[CommentOut]:
-    """发表评论 / 回复。"""
+    """发表评论。"""
     topic = crud_topic.get_topic_by_topic_id(db, topic_id)
     if topic is None:
         raise NotFoundException("帖子不存在")
@@ -395,21 +461,15 @@ def create_topic_comment(
     if not content:
         raise BadRequestException("评论内容不能为空")
 
-    parent_id = payload.parent_id
-    if parent_id is not None:
-        parent = crud_comment.get_comment_by_id(db, parent_id)
-        if parent is None:
-            raise NotFoundException("父评论不存在")
-        if parent.topic_id != topic.topic_id:
-            raise BadRequestException("只能回复同一帖子下的评论")
-        if parent.parent_id is not None:
-            raise BadRequestException("只支持两级评论，回复不能再被回复")
-
     comment = crud_comment.create_comment(
-        db, topic_id=topic.topic_id, uid=current_user.uid, content=content, parent_id=parent_id
+        db,
+        comment_id=_generate_comment_id(db),
+        topic_id=topic.topic_id,
+        uid=current_user.uid,
+        content=content,
     )
-    logger.info("用户发表评论 | uid=%s topic_id=%s comment_id=%s parent_id=%s",
-                current_user.uid, topic.topic_id, comment.id, parent_id)
+    logger.info("用户发表评论 | uid=%s topic_id=%s comment_id=%s",
+                current_user.uid, topic.topic_id, comment.comment_id)
     return ApiResponse.ok(
         _build_comment_out(comment, {current_user.uid: current_user}, {}),
         msg="评论成功",
@@ -417,28 +477,74 @@ def create_topic_comment(
 
 
 @topic_router.post(
+    "/reply/{comment_id}",
+    response_model=ApiResponse[ReplyOut],
+    summary="发布回复",
+    description="登录用户对指定评论发表回复（comment_id 为四位数评论编号），"
+                "自动生成四位数随机唯一回复编号 reply_id，回复外链到帖子编号与评论编号；不支持回复的回复。",
+)
+def create_comment_reply(
+    payload: ReplyCreate,
+    comment_id: int = Path(..., ge=1000, le=9999, description="评论唯一编号 comment_id"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[ReplyOut]:
+    """对评论发表回复。"""
+    comment = crud_comment.get_comment_by_comment_id(db, comment_id)
+    if comment is None:
+        raise NotFoundException("评论不存在")
+
+    content = payload.content.strip()
+    if not content:
+        raise BadRequestException("回复内容不能为空")
+
+    reply_to_id = payload.reply_to_id
+    if reply_to_id is not None:
+        target = crud_comment.get_reply_by_reply_id(db, reply_to_id)
+        if target is None or target.comment_id != comment.comment_id:
+            raise BadRequestException("被回复的回复不存在")
+
+    reply = crud_comment.create_reply(
+        db,
+        reply_id=_generate_reply_id(db),
+        topic_id=comment.topic_id,
+        comment_id=comment.comment_id,
+        uid=current_user.uid,
+        content=content,
+        reply_to_id=reply_to_id,
+    )
+    logger.info("用户回复评论 | uid=%s topic_id=%s comment_id=%s reply_id=%s",
+                current_user.uid, comment.topic_id, comment.comment_id, reply.reply_id)
+    return ApiResponse.ok(
+        _build_reply_out(reply, {current_user.uid: current_user}),
+        msg="回复成功",
+    )
+
+
+@topic_router.post(
     "/commentLike/{comment_id}",
     response_model=ApiResponse[int],
     summary="点赞评论",
-    description="登录用户点赞评论（每个用户对同一评论只能点赞一次），返回点赞后的最新点赞数量。",
+    description="登录用户点赞评论（comment_id 为四位数评论编号，每个用户对同一评论只能点赞一次），"
+                "返回点赞后的最新点赞数量。",
 )
 def like_comment(
-    comment_id: int = Path(..., ge=1, description="评论ID"),
+    comment_id: int = Path(..., ge=1000, le=9999, description="评论唯一编号 comment_id"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[int]:
     """点赞评论。"""
-    comment = crud_comment.get_comment_by_id(db, comment_id)
+    comment = crud_comment.get_comment_by_comment_id(db, comment_id)
     if comment is None:
         raise NotFoundException("评论不存在")
     if current_user.uid in {
-        user.uid for user in crud_comment.list_like_users(db, [comment_id]).get(comment_id, [])
+        user.uid for user in crud_comment.list_like_users(db, [comment.id]).get(comment.id, [])
     }:
         raise BadRequestException("您已点赞该评论")
 
-    crud_comment.like_comment(db, comment_id=comment.id, uid=current_user.uid)
+    crud_comment.like_comment(db, comment_row_id=comment.id, uid=current_user.uid)
     logger.info("用户点赞评论 | uid=%s comment_id=%s", current_user.uid, comment_id)
-    likes = len(crud_comment.list_like_users(db, [comment_id]).get(comment_id, []))
+    likes = len(crud_comment.list_like_users(db, [comment.id]).get(comment.id, []))
     return ApiResponse.ok(likes, msg="点赞成功")
 
 
@@ -446,21 +552,22 @@ def like_comment(
     "/commentUnlike/{comment_id}",
     response_model=ApiResponse[int],
     summary="取消点赞评论",
-    description="登录用户取消点赞评论（未点赞时返回错误），返回取消后的最新点赞数量。",
+    description="登录用户取消点赞评论（comment_id 为四位数评论编号，未点赞时返回错误），"
+                "返回取消后的最新点赞数量。",
 )
 def unlike_comment(
-    comment_id: int = Path(..., ge=1, description="评论ID"),
+    comment_id: int = Path(..., ge=1000, le=9999, description="评论唯一编号 comment_id"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> ApiResponse[int]:
     """取消点赞评论。"""
-    comment = crud_comment.get_comment_by_id(db, comment_id)
+    comment = crud_comment.get_comment_by_comment_id(db, comment_id)
     if comment is None:
         raise NotFoundException("评论不存在")
-    if not crud_comment.unlike_comment(db, comment_id=comment.id, uid=current_user.uid):
+    if not crud_comment.unlike_comment(db, comment_row_id=comment.id, uid=current_user.uid):
         raise BadRequestException("您未点赞该评论")
 
     logger.info("用户取消点赞评论 | uid=%s comment_id=%s", current_user.uid, comment_id)
-    likes = len(crud_comment.list_like_users(db, [comment_id]).get(comment_id, []))
+    likes = len(crud_comment.list_like_users(db, [comment.id]).get(comment.id, []))
     return ApiResponse.ok(likes, msg="取消点赞成功")
 

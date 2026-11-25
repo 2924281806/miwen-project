@@ -16,15 +16,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import styles from "./user.module.scss";
 
-/** 顶部导航 tab */
-const TABS = [
-  { key: "activity", label: "动态", count: 0 },
-  { key: "answer", label: "回答", count: 0 },
-  { key: "article", label: "文章", count: 0 },
-  { key: "column", label: "圈子", count: 0 },
-  { key: "favorite", label: "收藏", count: 0 },
-];
-
 /** 右侧关注列表 */
 const FOLLOW_ITEMS = [
   { label: "关注的话题", count: 0 },
@@ -40,6 +31,13 @@ export default function UserProfile() {
   const [activeTab, setActiveTab] = useState("activity");
   const currentUserInfo = useUserStore((state) => state.userInfo);
   const routePush = useRouterPush();
+  /** 顶部导航 tab */
+  const TABS = [
+    { key: "answer", label: "回答", count: 0 },
+    { key: "article", label: "帖子", count: userInfo?.points || 0 },
+    { key: "column", label: "圈子", count: 0 },
+    { key: "favorite", label: "收藏", count: 0 },
+  ];
 
   useEffect(() => {
     if (!uid) return;
