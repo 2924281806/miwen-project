@@ -339,6 +339,7 @@ def _build_comment_out(
     comment,
     users_map: dict,
     like_users_map: dict,
+    topic,
 ) -> CommentOut:
     """组装单条评论出参：评论编号、作者、点赞数量、点赞用户信息列表（回复由调用方填充）。"""
     like_users = like_users_map.get(comment.id, [])
@@ -351,6 +352,7 @@ def _build_comment_out(
         likes=len(like_users),
         author=_comment_author_out(users_map.get(comment.uid)),
         liked_users=[_comment_author_out(user) for user in like_users],
+        topicTitle=topic.title,
     )
 
 
@@ -434,7 +436,7 @@ def get_topic_comments(
 
     outs = []
     for comment in comments:
-        out = _build_comment_out(comment, users_map, like_users_map)
+        out = _build_comment_out(comment, users_map, like_users_map, topic)
         out.replies = replies_by_comment.get(comment.comment_id, [])
         outs.append(out)
     return ApiResponse.ok(outs, msg="查询成功")
@@ -471,7 +473,7 @@ def create_topic_comment(
     logger.info("用户发表评论 | uid=%s topic_id=%s comment_id=%s",
                 current_user.uid, topic.topic_id, comment.comment_id)
     return ApiResponse.ok(
-        _build_comment_out(comment, {current_user.uid: current_user}, {}),
+        _build_comment_out(comment, {current_user.uid: current_user}, {}, topic),
         msg="评论成功",
     )
 
@@ -571,3 +573,44 @@ def unlike_comment(
     likes = len(crud_comment.list_like_users(db, [comment.id]).get(comment.id, []))
     return ApiResponse.ok(likes, msg="取消点赞成功")
 
+
+@topic_router.get(
+    "/commentsBy/{uid}",
+    response_model=ApiResponse[PageResult[CommentOut]],
+    summary="查询用户发布的评论（含回复）",
+    description="登录用户查询指定用户发布的评论（含回复），返回评论列表。",
+)
+def list_comments_by_uid(
+    page: int = Query(1, ge=1, description="页码，从 1 开始"),
+    pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
+    uid: str = Path(..., description="用户唯一编号 uid"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[PageResult[CommentOut]]:
+    """查询用户发布的评论（含回复）。"""
+    offset = (page - 1) * pageSize
+    comments = crud_comment.list_comments_by_uid(db, uid, offset, pageSize)
+    for comment in comments:
+        comment.topicTitle = crud_topic.get_topic_title(db, comment.topic_id)
+    total = crud_comment.count_comments(db, uid=uid)
+    return ApiResponse.ok(PageResult.create(comments, total, page, pageSize=pageSize))
+    
+@topic_router.get(
+    "/favoriteTopic/{uid}",
+    response_model=ApiResponse[PageResult[TopicOut]],
+    summary="查询用户收藏的帖子",
+    description="登录用户查询指定用户收藏的帖子，返回帖子对象。",
+)
+
+def list_favorite_topics_by_uid(
+    page: int = Query(1, ge=1, description="页码，从 1 开始"),
+    pageSize: int = Query(10, ge=1, le=100, description="每页条数，1-100"),
+    uid: str = Path(..., description="用户唯一编号 uid"),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ApiResponse[PageResult[TopicOut]]:
+    """查询用户收藏的帖子。"""
+    offset = (page - 1) * pageSize
+    topics = crud_topic.list_favorite_topics_by_uid(db, uid, offset, pageSize)
+    total = crud_topic.count_favorite_topics_by_uid(db, uid=uid)
+    return ApiResponse.ok(PageResult.create(topics, total, page, pageSize=pageSize))

@@ -111,6 +111,10 @@ def create_reply(
     db.refresh(reply)
     return reply
 
+def count_comments(db: Session, uid: str) -> int:
+    """统计用户发布的评论总数（含回复）。"""
+    stmt = select(func.count()).select_from(TopicComment).where(TopicComment.uid == uid)
+    return db.execute(stmt).scalar_one()
 
 def like_comment(db: Session, *, comment_row_id: int, uid: str) -> CommentLike:
     """新增评论点赞记录（唯一索引兜底，业务层已保证不重复点赞）。"""
@@ -151,3 +155,14 @@ def count_comments_by_topic(db: Session, topic_id: int) -> int:
         ).scalar_one()
     )
     return comment_count + reply_count
+
+def list_comments_by_uid(db: Session, uid: str, offset: int = 0, limit: int = 10,) -> List[TopicComment]:
+    """查询用户发布的评论（含回复）。"""
+    stmt = (
+        select(TopicComment)
+        .where(TopicComment.uid == uid)
+        .order_by(TopicComment.created_at.asc(), TopicComment.id.asc())
+        .offset(offset)
+        .limit(limit)
+    )
+    return db.execute(stmt).scalars().all()

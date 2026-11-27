@@ -17,6 +17,10 @@ export interface ForumListDto {
   is_join: number;
   user_counts: number;
   topic_counts: number;
+  title: string;
+  content: string;
+  topic_id: number;
+  topicTitle?: string;
 }
 
 export interface PageResult<T> {

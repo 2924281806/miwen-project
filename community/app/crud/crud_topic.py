@@ -38,6 +38,31 @@ def count_topics_by_uid(db: Session, uid: str) -> int:
     )
     return int(db.execute(stmt).scalar() or 0)
 
+def list_favorite_topics_by_uid(
+    db: Session,
+    uid: str,
+    offset: int = 0,
+    limit: int = 10,
+) -> List[Topic]:
+    """查询某用户的收藏帖子（仅正常状态）。"""
+    stmt = (
+        select(Topic)
+        .join(TopicFavorite, Topic.topic_id == TopicFavorite.topic_id)
+        .where(TopicFavorite.uid == uid, Topic.status == 1, Topic.deleted_at.is_(None))
+        .order_by(TopicFavorite.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    return db.execute(stmt).scalars().all()
+
+def count_favorite_topics_by_uid(db: Session, uid: str) -> int:
+    """统计某用户的收藏帖子数（仅正常状态）。"""
+    stmt = (
+        select(func.count())
+        .select_from(TopicFavorite)
+        .where(TopicFavorite.uid == uid, TopicFavorite.topic_id == Topic.topic_id, Topic.status == 1, Topic.deleted_at.is_(None))
+    )
+    return int(db.execute(stmt).scalar() or 0)
 
 def create_topic(
     db: Session,
@@ -244,3 +269,8 @@ def get_hot_topics(db: Session, limit: int = 10) -> List[Topic]:
         .limit(limit)
     )
     return list(db.execute(stmt).scalars().all())
+
+def get_topic_title(db: Session, topic_id: int) -> str:
+    """根据帖子编号查询帖子标题。"""
+    stmt = select(Topic.title).where(Topic.topic_id == topic_id)
+    return db.execute(stmt).scalar_one_or_none() or ""

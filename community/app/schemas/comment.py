@@ -70,6 +70,6 @@ class CommentOut(BaseModel):
     author: Optional[CommentAuthorOut] = Field(None, description="评论用户信息")
     liked_users: List[CommentAuthorOut] = Field(default_factory=list, description="点赞用户信息列表")
     replies: List[ReplyOut] = Field(default_factory=list, description="回复信息列表")
-
+    topicTitle: str = Field(..., description="帖子标题")
 
 ReplyOut.model_rebuild()

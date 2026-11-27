@@ -9,6 +9,7 @@
     box-shadow: 0 1px 3px rgba(18, 18, 18, 0.06);
     margin: 0 auto;
     max-width: 1000px;
+    border-radius: 4px;
   }
 
   .cover {
@@ -145,18 +146,11 @@
 
   .mainCol {
     background: #fff;
-    box-shadow: 0 1px 3px rgba(18, 18, 18, 0.06);
     flex: 1;
     min-width: 0;
-    padding: 20px 24px;
-
-    .mainHead {
-      border-bottom: 1px solid #f0f0f0;
-      color: #121212;
-      font-size: 15px;
-      font-weight: 600;
-      padding-bottom: 12px;
-    }
+    padding: 12px;
+    border-radius: 4px;
+    min-height: 390px;
 
     .emptyState {
       padding: 56px 0 48px;
@@ -176,6 +170,36 @@
         }
       }
     }
+    .card {
+      margin: 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .cardTitle {
+      display: block;
+      font-size: 17px;
+      font-weight: 600;
+      color: #121212;
+      line-height: 1.5;
+      margin: 0 0 8px;
+      cursor: pointer;
+      transition: color 0.2s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      a {
+        color: #333;
+        text-decoration: none;
+        &:hover {
+          color: #175199;
+        }
+      }
+    }
+
+    .cardBody {
+      font-size: 14px;
+      color: #2c2c2c;
+      line-height: 1.7;
+    }
   }
 
   .sideCol {
@@ -190,6 +214,7 @@
       background: #fff;
       box-shadow: 0 1px 3px rgba(18, 18, 18, 0.06);
       padding: 16px 20px;
+      border-radius: 4px;
 
       .creatorHead {
         align-items: center;
@@ -256,6 +281,7 @@
       box-shadow: 0 1px 3px rgba(18, 18, 18, 0.06);
       display: flex;
       padding: 16px 0;
+      border-radius: 4px;
 
       .statsItem {
         flex: 1;
@@ -284,6 +310,7 @@
     .followListCard {
       background: #fff;
       box-shadow: 0 1px 3px rgba(18, 18, 18, 0.06);
+      border-radius: 4px;
 
       .followItem {
         align-items: center;

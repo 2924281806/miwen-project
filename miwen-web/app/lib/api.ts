@@ -8,6 +8,7 @@ import type {
   PageResult,
 } from "@/app/types/forum";
 import type {
+  CommentOut,
   CreatePostDto,
   CreatePostParams,
   GetPostParams,
@@ -124,6 +125,7 @@ export const createPost = async (data: CreatePostParams) => {
   );
   return res.data;
 };
+// 获取帖子列表
 export const getPostList = async (params: GetPostParams) => {
   const res = await request.get<ApiResult<PageResult<CreatePostDto>>>(
     "/api/topic/list",
@@ -275,6 +277,21 @@ export const likeComment = async (commentId: number) => {
 export const unlikeComment = async (commentId: number) => {
   const res = await request.post<ApiResult<number>>(
     `/api/topic/commentUnlike/${commentId}`,
+  );
+  return res.data;
+};
+
+export const listCommentsByUid = async (params: GetPostParams) => {
+  const res = await request.get<ApiResult<CommentOut>>(
+    `/api/topic/commentsBy/${params.uid}?page=${params.page}&pageSize=${params.pageSize}`,
+  );
+  return res.data;
+};
+
+// 获取用户收藏的帖子（登录用户）
+export const listFavoriteTopicsByUid = async (params: GetPostParams) => {
+  const res = await request.get<ApiResult<CommentOut>>(
+    `/api/topic/favoriteTopic/${params.uid}?page=${params.page}&pageSize=${params.pageSize}`,
   );
   return res.data;
 };

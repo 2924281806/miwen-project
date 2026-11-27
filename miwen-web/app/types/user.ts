@@ -18,6 +18,7 @@ export interface UserInfo {
   is_follow?: number;
   /** 是否是管理员：0不是，1是 */
   is_admin?: number;
+  /** 评论列表 */
 }
 
 // 注册入参

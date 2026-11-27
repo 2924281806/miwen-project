@@ -51,6 +51,9 @@ export interface CreatePostDto {
   comments: number;
   author: AuthorDto | null; // 作者信息，仅详情接口返回
   tag?: string; // 标签
+  topicTitle?: string; // 帖子标题
+  name?: string; // 圈子名称
+  description?: string; // 圈子描述
 }
 
 export interface HotTopicsImageOut {
@@ -58,4 +61,11 @@ export interface HotTopicsImageOut {
   img_url: string;
   created_at: string;
   deleted_at: string | null;
+}
+
+export interface CommentOut {
+  lists: [];
+  total: number;
+  page: number;
+  pageSize: number;
 }
